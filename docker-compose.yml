@@ -1,0 +1,79 @@
+# ============================================================
+#  Smart Fish Pond IoT — stack pengembangan lengkap
+#
+#  Infrastruktur saja (backend & frontend dijalankan dari terminal):
+#      docker compose up -d postgres mosquitto
+#  Seluruh stack:
+#      docker compose --profile full up -d --build
+# ============================================================
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: fishpond-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-fishpond}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fishpond}
+      POSTGRES_DB: ${POSTGRES_DB:-smartfishpond}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fishpond}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: fishpond-mosquitto
+    restart: unless-stopped
+    ports:
+      - "${MQTT_PORT:-1883}:1883"
+      - "${MQTT_WS_PORT:-9001}:9001"
+    volumes:
+      - ./docker/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+
+  backend:
+    build: ./backend
+    container_name: fishpond-backend
+    profiles: ["full"]
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mosquitto:
+        condition: service_started
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: postgres://${POSTGRES_USER:-fishpond}:${POSTGRES_PASSWORD:-fishpond}@postgres:5432/${POSTGRES_DB:-smartfishpond}
+      MQTT_URL: mqtt://mosquitto:1883
+      CORS_ORIGIN: http://localhost:${FRONTEND_PORT:-5173}
+    ports:
+      - "${BACKEND_PORT:-4000}:4000"
+    # Migrasi dijalankan tiap start; runner-nya idempoten.
+    command: sh -c "node src/db/migrate.js && node src/index.js"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: http://localhost:${BACKEND_PORT:-4000}
+        VITE_SOCKET_URL: http://localhost:${BACKEND_PORT:-4000}
+    container_name: fishpond-frontend
+    profiles: ["full"]
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+
+volumes:
+  pgdata:
+  mosquitto_data:
+  mosquitto_log:

@@ -1,0 +1,39 @@
+# ---- Node ----
+node_modules/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+dist/
+build/
+coverage/
+.vite/
+
+# ---- Environment / secrets ----
+.env
+.env.local
+.env.*.local
+firmware/include/secrets.h
+
+# ---- PlatformIO ----
+.pio/
+.pioenvs/
+.piolibdeps/
+firmware/.pio/
+
+# ---- Database / data ----
+*.sqlite
+*.db
+data/
+pgdata/
+
+# ---- Editor & OS ----
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# ---- Logs ----
+logs/
+*.log

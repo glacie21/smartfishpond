@@ -1,0 +1,24 @@
+{
+  "name": "smartfishpond-iot",
+  "version": "0.1.0",
+  "description": "Sistem monitoring kualitas air kolam ikan berbasis IoT (ESP32 + MQTT + Node.js + React)",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev:backend": "npm run dev --workspace backend",
+    "dev:frontend": "npm run dev --workspace frontend",
+    "build": "npm run build --workspace frontend",
+    "migrate": "npm run migrate --workspace backend",
+    "seed": "node scripts/seed.js",
+    "simulate": "node scripts/simulate-device.js",
+    "test": "npm test --workspace backend"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}

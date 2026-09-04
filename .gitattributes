@@ -1,0 +1,10 @@
+# Normalkan akhir baris: LF di repo, sesuai OS di working copy.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.ico binary
+*.pdf binary
+
+# Statistik bahasa GitHub: abaikan file bawaan/dokumentasi
+docs/**       linguist-documentation
