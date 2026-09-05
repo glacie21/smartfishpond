@@ -23,7 +23,6 @@ export function useTimeRange(defaultId = '24h') {
     const to = new Date();
     const from = new Date(to.getTime() - range.hours * 60 * 60 * 1000);
     return { from: from.toISOString(), to: to.toISOString(), bucket: range.bucket };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rangeId]);
 
   return { rangeId, setRangeId, range, params };

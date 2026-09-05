@@ -5,13 +5,14 @@
    ============================================================ */
 
 :root {
-  --bg: #f5f7fa;
+  --bg: #f3f7f4;
   --surface: #ffffff;
-  --surface-alt: #eef2f7;
-  --border: #dde3ec;
-  --text: #16202e;
-  --text-muted: #64748b;
-  --accent: #0ea5e9;
+  --surface-alt: #e8f0eb;
+  --border: #d5e1d8;
+  --text: #14251d;
+  --text-muted: #66776c;
+  --accent: #087f5b;
+  --accent-dark: #075b43;
 
   --normal: #10b981;
   --warning: #f59e0b;
@@ -44,7 +45,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  font-family: "DM Sans", "Segoe UI", sans-serif;
   font-size: 15px;
   line-height: 1.5;
 }
@@ -159,6 +160,63 @@ code {
   margin: 0;
   font-size: 1.5rem;
 }
+
+.eyebrow {
+  margin: 0 0 4px;
+  color: var(--accent);
+  font-size: 0.7rem;
+  font-weight: 750;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.btn--quiet {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.btn--quiet:hover { border-color: var(--accent); }
+
+.dashboard-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 170px;
+  margin-bottom: 16px;
+  padding: 28px 32px;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: linear-gradient(115deg, #0b6249, #0d8a65 58%, #4aa675);
+  color: #f5fff9;
+}
+
+.dashboard-hero__kicker { margin: 0 0 8px; opacity: 0.75; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; }
+.dashboard-hero h3 { margin: 0; max-width: 560px; font-size: clamp(1.35rem, 3vw, 2rem); letter-spacing: -0.02em; }
+.dashboard-hero p:last-child { margin: 10px 0 0; color: rgba(245, 255, 249, 0.78); }
+
+.dashboard-hero__signal { display: flex; align-items: end; gap: 6px; height: 80px; margin-right: 18px; opacity: 0.7; }
+.dashboard-hero__signal span { display: block; width: 12px; border-radius: 12px 12px 2px 2px; background: rgba(255, 255, 255, 0.72); }
+.dashboard-hero__signal span:nth-child(1) { height: 30%; }
+.dashboard-hero__signal span:nth-child(2) { height: 58%; }
+.dashboard-hero__signal span:nth-child(3) { height: 42%; }
+.dashboard-hero__signal span:nth-child(4) { height: 88%; }
+
+.stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 30px; }
+.stat-card { padding: 18px 20px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
+.stat-card__label, .stat-card__hint { display: block; color: var(--text-muted); font-size: 0.78rem; }
+.stat-card strong { display: block; margin: 7px 0 2px; font-size: 1.85rem; line-height: 1; }
+.stat-card strong small { color: var(--text-muted); font-size: 1rem; font-weight: 500; }
+.stat-card--positive { border-top: 3px solid var(--normal); }
+.stat-card--warning { border-top: 3px solid var(--warning); }
+
+.attention-panel { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 30px; padding: 18px 20px; border: 1px solid #f1d79b; border-radius: var(--radius); background: #fff9e9; }
+.attention-panel h3 { margin: 0; font-size: 1rem; }
+.attention-list { display: flex; flex-wrap: wrap; justify-content: end; gap: 8px; }
+.attention-item { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; border-radius: 6px; background: rgba(255, 255, 255, 0.7); color: #725719; font-size: 0.8rem; }
+.attention-item__dot { width: 7px; height: 7px; border-radius: 50%; }
+.section-header--ponds { align-items: end; margin-top: 0; }
+.section-header__count { color: var(--text-muted); font-size: 0.8rem; }
 
 .page-header__subtitle {
   margin: 4px 0 0;
@@ -529,4 +587,9 @@ code {
   .app__main { padding: 16px; }
   .metric-card__value { font-size: 1.6rem; }
   .page-header { flex-direction: column; }
+  .dashboard-hero { min-height: 150px; padding: 22px; }
+  .dashboard-hero__signal { display: none; }
+  .stat-grid { grid-template-columns: 1fr; gap: 10px; margin-bottom: 24px; }
+  .attention-panel { align-items: flex-start; flex-direction: column; }
+  .attention-list { justify-content: start; }
 }
