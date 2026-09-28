@@ -19,8 +19,8 @@
 
     <!-- Warna UI browser mengikuti token --bg pada styles/index.css -->
     <meta name="color-scheme" content="light dark" />
-    <meta name="theme-color" content="#f3f7f4" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#0b1220" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f0f5fa" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#060d1a" media="(prefers-color-scheme: dark)" />
 
     <!-- Pratinjau saat ditautkan di chat/media sosial -->
     <meta property="og:type" content="website" />
@@ -30,31 +30,32 @@
     <meta property="og:locale" content="id_ID" />
     <meta name="twitter:card" content="summary" />
 
-    <!-- Font DM Sans dipakai body di styles/index.css -->
+    <!-- Font Inter + DM Sans dipakai body di styles/index.css -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap"
     />
 
     <!-- Gaya splash: berdiri sendiri karena index.css baru ikut saat bundel JS dimuat -->
     <style>
       :root {
         color-scheme: light dark;
-        --splash-bg: #f3f7f4;
-        --splash-text: #66776c;
-        --splash-ring: #d5e1d8;
-        --splash-accent: #087f5b;
-        --splash-heading: #14251d;
+        --splash-bg: #060d1a;
+        --splash-text: #7d93b2;
+        --splash-ring: #1b2536;
+        --splash-accent: #22d3ee;
+        --splash-heading: #e8f0fe;
       }
 
-      @media (prefers-color-scheme: dark) {
+      @media (prefers-color-scheme: light) {
         :root {
-          --splash-bg: #0b1220;
-          --splash-text: #94a3b8;
-          --splash-ring: #26324a;
-          --splash-heading: #e6edf7;
+          --splash-bg: #f0f5fa;
+          --splash-text: #64748b;
+          --splash-ring: #dce6f0;
+          --splash-accent: #0891b2;
+          --splash-heading: #0f172a;
         }
       }
 
@@ -69,17 +70,17 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 14px;
+        gap: 16px;
         min-height: 100vh;
         min-height: 100dvh;
         color: var(--splash-text);
-        font-family: "DM Sans", "Segoe UI", sans-serif;
+        font-family: "Inter", "DM Sans", "Segoe UI", sans-serif;
         font-size: 15px;
       }
 
       .app-splash__ring {
-        width: 34px;
-        height: 34px;
+        width: 36px;
+        height: 36px;
         border: 3px solid var(--splash-ring);
         border-top-color: var(--splash-accent);
         border-radius: 50%;
@@ -103,7 +104,7 @@
         margin: 15vh auto 0;
         padding: 0 1rem;
         color: var(--splash-heading);
-        font-family: "DM Sans", "Segoe UI", sans-serif;
+        font-family: "Inter", "DM Sans", "Segoe UI", sans-serif;
         text-align: center;
       }
     </style>

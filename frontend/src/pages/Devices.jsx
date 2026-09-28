@@ -13,8 +13,13 @@ export function Devices() {
   return (
     <>
       <div className="page-header">
-        <h2 className="page-header__title">Perangkat</h2>
-        <p className="page-header__subtitle">{data?.length ?? 0} node terdaftar</p>
+        <div>
+          <p className="eyebrow">Manajemen</p>
+          <h2 className="page-header__title">Perangkat IoT</h2>
+          <p className="page-header__subtitle">
+            📡 {data?.length ?? 0} node ESP32 terdaftar dalam sistem
+          </p>
+        </div>
       </div>
       <DeviceTable devices={data} />
     </>

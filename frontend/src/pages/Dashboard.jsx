@@ -68,7 +68,7 @@ export function Dashboard() {
       <section className="dashboard-hero" aria-label="Ringkasan sistem">
         <div>
           <p className="dashboard-hero__kicker">Ringkasan sistem</p>
-          <h3>{stats.alertCount ? `${stats.alertCount} parameter perlu perhatian` : 'Semua parameter dalam batas aman'}</h3>
+          <h3>{stats.alertCount ? `${stats.alertCount} parameter perlu perhatian` : '✓ Semua parameter dalam batas aman'}</h3>
           <p>Data terbaru dari {ponds.length} kolam dan {stats.deviceCount} perangkat terdaftar.</p>
         </div>
         <div className="dashboard-hero__signal" aria-hidden="true">
@@ -81,17 +81,17 @@ export function Dashboard() {
 
       <section className="stat-grid" aria-label="Statistik sistem">
         <article className="stat-card">
-          <span className="stat-card__label">Kolam aktif</span>
+          <span className="stat-card__label">🐟 Kolam aktif</span>
           <strong>{ponds.length}</strong>
           <span className="stat-card__hint">terpantau sistem</span>
         </article>
         <article className="stat-card stat-card--positive">
-          <span className="stat-card__label">Perangkat online</span>
+          <span className="stat-card__label">📡 Perangkat online</span>
           <strong>{stats.onlineCount}<small>/{stats.deviceCount}</small></strong>
           <span className="stat-card__hint">koneksi aktif</span>
         </article>
         <article className={`stat-card${stats.alertCount ? ' stat-card--warning' : ' stat-card--positive'}`}>
-          <span className="stat-card__label">Peringatan</span>
+          <span className="stat-card__label">⚠️ Peringatan</span>
           <strong>{stats.alertCount}</strong>
           <span className="stat-card__hint">parameter di luar batas</span>
         </article>
@@ -134,15 +134,15 @@ export function Dashboard() {
 
               <dl className="pond-card__meta">
                 <div>
-                  <dt>Lokasi</dt>
+                  <dt>📍 Lokasi</dt>
                   <dd>{pond.location ?? '-'}</dd>
                 </div>
                 <div>
-                  <dt>Komoditas</dt>
+                  <dt>🐟 Komoditas</dt>
                   <dd>{pond.fish_type ?? '-'}</dd>
                 </div>
                 <div>
-                  <dt>Perangkat</dt>
+                  <dt>📡 Perangkat</dt>
                   <dd>
                     {pond.device_online}/{pond.device_count} online
                   </dd>

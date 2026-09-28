@@ -68,10 +68,10 @@ export function PondDetail() {
           </Link>
           <h2 className="page-header__title">{pond.name}</h2>
           <p className="page-header__subtitle">
-            {pond.location ?? 'Lokasi belum diisi'}
+            📍 {pond.location ?? 'Lokasi belum diisi'}
             {' · '}
             {current?.recorded_at
-              ? `Pembaruan terakhir ${timeFormatter.format(new Date(current.recorded_at))}`
+              ? `🕐 Pembaruan terakhir ${timeFormatter.format(new Date(current.recorded_at))}`
               : 'Belum ada pembacaan'}
           </p>
         </div>
@@ -85,7 +85,7 @@ export function PondDetail() {
       <MetricGrid reading={current} />
 
       <div className="section-header">
-        <h3 className="section-header__title">Tren</h3>
+        <h3 className="section-header__title">📈 Tren</h3>
         <TimeRangeSelector value={rangeId} onChange={setRangeId} />
       </div>
 
@@ -107,7 +107,7 @@ export function PondDetail() {
       )}
 
       <div className="section-header">
-        <h3 className="section-header__title">Perangkat</h3>
+        <h3 className="section-header__title">📡 Perangkat</h3>
       </div>
       <DeviceTable devices={devices} />
     </>
