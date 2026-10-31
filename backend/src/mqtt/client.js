@@ -29,7 +29,7 @@ export function connectMqtt() {
 
   client.on('connect', () => {
     log.info(`terhubung ke broker ${url}`);
-    const list = [topics.telemetry, topics.status];
+    const list = [topics.telemetry, topics.status, topics.actuators, topics.ack];
     client.subscribe(list, { qos: 1 }, (err) => {
       if (err) log.error(`gagal subscribe: ${err.message}`);
       else log.info(`subscribe: ${list.join(', ')}`);
@@ -52,6 +52,14 @@ export function connectMqtt() {
 
 export function getMqttClient() {
   return client;
+}
+
+/** Publish objek sebagai JSON (QoS 1). Melempar error bila broker tidak tersambung. */
+export async function publishJson(topic, payload, { retain = false } = {}) {
+  if (!client?.connected) {
+    throw new Error('Broker MQTT tidak tersambung');
+  }
+  await client.publishAsync(topic, JSON.stringify(payload), { qos: 1, retain });
 }
 
 export async function closeMqtt() {

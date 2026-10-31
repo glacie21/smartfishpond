@@ -20,7 +20,9 @@ function parseArgs(argv) {
   const args = argv.slice(2);
   const roleIndex = args.indexOf('--role');
   const role = roleIndex === -1 ? 'viewer' : args[roleIndex + 1];
-  const username = args.find((arg, i) => !arg.startsWith('--') && i !== roleIndex + 1);
+  // Nilai setelah --role bukan username.
+  const roleValueIndex = roleIndex === -1 ? -1 : roleIndex + 1;
+  const username = args.find((arg, i) => !arg.startsWith('--') && i !== roleValueIndex);
   return { username, role };
 }
 

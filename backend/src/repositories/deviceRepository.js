@@ -18,14 +18,57 @@ export async function findById(id) {
 /**
  * Auto-provisioning: device yang belum terdaftar dibuat saat paket
  * pertamanya masuk, sehingga tidak perlu registrasi manual.
+ *
+ * Kolam device yang SUDAH terdaftar tidak diubah di sini — pemindahan kolam
+ * hanya lewat API (PATCH /devices/:id). Mengembalikan baris device.
  */
 export async function ensureExists(id, pondId) {
-  await query(
+  const { rows } = await query(
     `INSERT INTO devices (id, pond_id, name)
      VALUES ($1, $2, $1)
-     ON CONFLICT (id) DO UPDATE SET pond_id = EXCLUDED.pond_id`,
+     ON CONFLICT (id) DO UPDATE SET id = devices.id
+     RETURNING *`,
     [id, pondId],
   );
+  return rows[0];
+}
+
+export async function create({ id, pondId, name }) {
+  const { rows } = await query(
+    `INSERT INTO devices (id, pond_id, name)
+     VALUES ($1, $2, COALESCE($3, $1))
+     RETURNING *`,
+    [id, pondId, name ?? null],
+  );
+  return rows[0];
+}
+
+export async function update(id, { name, pondId }) {
+  const { rows } = await query(
+    `UPDATE devices
+        SET name    = COALESCE($2, name),
+            pond_id = COALESCE($3, pond_id)
+      WHERE id = $1
+      RETURNING *`,
+    [id, name ?? null, pondId ?? null],
+  );
+  return rows[0] ?? null;
+}
+
+export async function remove(id) {
+  const { rowCount } = await query('DELETE FROM devices WHERE id = $1', [id]);
+  return rowCount > 0;
+}
+
+export async function updateActuators(id, actuators) {
+  const { rows } = await query(
+    `UPDATE devices
+        SET actuators = $2::jsonb, actuators_updated_at = now()
+      WHERE id = $1
+      RETURNING *`,
+    [id, JSON.stringify(actuators)],
+  );
+  return rows[0] ?? null;
 }
 
 export async function updateStatus(id, { status, ipAddress, rssi, uptimeS }) {
@@ -53,8 +96,8 @@ export async function markStaleOffline(thresholdSeconds) {
         SET status = 'offline'
       WHERE status = 'online'
         AND (last_seen_at IS NULL OR last_seen_at < now() - ($1 || ' seconds')::interval)
-      RETURNING id`,
+      RETURNING id, pond_id`,
     [thresholdSeconds],
   );
-  return rows.map((row) => row.id);
+  return rows;
 }

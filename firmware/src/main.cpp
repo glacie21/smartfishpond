@@ -7,6 +7,9 @@
 //       pembacaan terakhir.
 //    3. Setiap PUBLISH_INTERVAL_MS -> kirim pembacaan terakhir sebagai
 //       telemetri JSON. Bila offline, payload masuk buffer melingkar.
+//    4. Perintah aktuator dari backend (topik .../command) dijalankan
+//       saat diterima; auto-off dicek tiap loop.
+//    5. Update firmware via WiFi (OTA) bila OTA_PASSWORD diisi.
 //
 //  Loop dibuat non-blocking (tanpa delay panjang) agar PubSubClient
 //  tetap sempat memproses keep-alive.
@@ -14,8 +17,10 @@
 
 #include <Arduino.h>
 
+#include "actuators.h"
 #include "config.h"
 #include "mqtt_client.h"
+#include "ota.h"
 #include "sensors.h"
 #include "telemetry.h"
 #include "wifi_manager.h"
@@ -46,6 +51,10 @@ void logReading(const SensorReading& r) {
 }  // namespace
 
 void setup() {
+  // Relay paling dulu: kondisi aman (aerator menyala) tidak boleh menunggu
+  // koneksi WiFi yang bisa makan waktu hingga 20 detik.
+  Actuators::begin();
+
   Serial.begin(115200);
   delay(500);
   Serial.println("\n=== Smart Fish Pond IoT — node sensor ===");
@@ -61,6 +70,8 @@ void setup() {
 void loop() {
   WifiManager::loop();
   MqttClient::loop();
+  Actuators::loop();
+  Ota::loop();
   updateStatusLed();
 
   const unsigned long now = millis();

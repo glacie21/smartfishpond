@@ -61,8 +61,25 @@ export const api = {
 
   listDevices: (params) => request('/devices', { params }),
   getDevice: (id) => request(`/devices/${id}`),
+  createDevice: (payload) =>
+    request('/devices', { method: 'POST', body: JSON.stringify(payload) }),
+  updateDevice: (id, payload) =>
+    request(`/devices/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+  deleteDevice: (id) => request(`/devices/${id}`, { method: 'DELETE' }),
+  sendCommand: (id, payload) =>
+    request(`/devices/${id}/commands`, { method: 'POST', body: JSON.stringify(payload) }),
+  listCommands: (id, params) => request(`/devices/${id}/commands`, { params }),
 
   getReadings: (params) => request('/readings', { params }),
   getAggregatedReadings: (params) => request('/readings/aggregate', { params }),
   getLatestReading: (deviceId) => request(`/readings/latest/${deviceId}`),
+
+  listAlerts: (params) => request('/alerts', { params }),
+  acknowledgeAlert: (id) => request(`/alerts/${id}/acknowledge`, { method: 'POST' }),
+
+  getThresholds: (pondId) => request('/thresholds', { params: { pondId } }),
+  setThreshold: (metric, payload) =>
+    request(`/thresholds/${metric}`, { method: 'PUT', body: JSON.stringify(payload) }),
+  resetThreshold: (metric, pondId) =>
+    request(`/thresholds/${metric}`, { method: 'DELETE', params: { pondId } }),
 };

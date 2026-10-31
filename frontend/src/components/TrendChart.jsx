@@ -31,11 +31,12 @@ const fullFormatter = new Intl.DateTimeFormat('id-ID', {
  *                  dan kolom nilai
  * @param valueKey  nama kolom nilai — `<metricKey>_avg` untuk data agregat,
  *                  atau `metricKey` untuk data mentah
+ * @param range     rentang aman [min, max]; default `safeRange` bawaan
  */
-export function TrendChart({ metricKey, data, valueKey }) {
+export function TrendChart({ metricKey, data, valueKey, range }) {
   const metric = METRIC_BY_KEY[metricKey];
   const field = valueKey ?? metricKey;
-  const [safeMin, safeMax] = metric.safeRange;
+  const [safeMin, safeMax] = range ?? metric.safeRange;
 
   const points = (data ?? [])
     .map((row) => ({

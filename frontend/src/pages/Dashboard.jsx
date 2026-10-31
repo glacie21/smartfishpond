@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 
 import { api } from '../api/client.js';
-import { evaluateMetric, METRICS } from '../constants/metrics.js';
+import { evaluateMetric, METRICS, rangeFor } from '../constants/metrics.js';
 import { ErrorState, Loading, EmptyState } from '../components/StateViews.jsx';
 import { StatusBadge } from '../components/StatusBadge.jsx';
 import { useApi } from '../hooks/useApi.js';
@@ -20,11 +20,13 @@ export function Dashboard() {
   const ponds = data?.ponds ?? [];
   const overviews = data?.overviews ?? [];
   const stats = useMemo(() => {
-    const readings = overviews.flatMap((overview) => overview?.latestReadings ?? []);
-    const alerts = readings.flatMap((reading) =>
-      METRICS.filter((metric) => ['warning', 'critical'].includes(
-        evaluateMetric(metric.key, reading[metric.key]),
-      )).map((metric) => ({ ...metric, reading })),
+    // Tiap kolam bisa punya ambang sendiri, jadi evaluasi memakai thresholds kolamnya.
+    const alerts = overviews.flatMap((overview) =>
+      (overview?.latestReadings ?? []).flatMap((reading) =>
+        METRICS.filter((metric) => ['warning', 'critical'].includes(
+          evaluateMetric(metric.key, reading[metric.key], rangeFor(metric.key, overview.thresholds)),
+        )).map((metric) => ({ ...metric, reading })),
+      ),
     );
     const deviceCount = ponds.reduce((total, pond) => total + Number(pond.device_count ?? 0), 0);
     const onlineCount = ponds.reduce((total, pond) => total + Number(pond.device_online ?? 0), 0);

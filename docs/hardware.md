@@ -14,6 +14,7 @@
 | Modul step-down 5 V            | Catu daya                 | 1 unit    | Bila memakai adaptor 12 V                  |
 | Level shifter / pembagi tegangan | Proteksi ADC            | secukupnya | ESP32 hanya toleran 3,3 V                 |
 | Box IP65 + kabel gland         | Pelindung elektronik      | 1 set     |                                            |
+| Modul relay 3 kanal (5 V)      | Aerator, pompa, feeder    | 1 unit    | Opsional; pilih yang ber-optocoupler       |
 
 ## Peta pin
 
@@ -29,9 +30,42 @@ Sesuai `firmware/include/config.h`:
 | Ultrasonik `TRIG`   | GPIO 5    | Digital out  |                                        |
 | Ultrasonik `ECHO`   | GPIO 18   | Digital in   | Turunkan ke 3,3 V (pembagi 1 kΩ/2 kΩ)  |
 | LED status          | GPIO 2    | Digital out  | LED onboard                            |
+| Relay aerator       | GPIO 25   | Digital out  | `PIN_RELAY_AERATOR`                    |
+| Relay pompa         | GPIO 26   | Digital out  | `PIN_RELAY_PUMP`                       |
+| Relay feeder        | GPIO 27   | Digital out  | `PIN_RELAY_FEEDER`                     |
 
 > **Gunakan hanya ADC1 (GPIO 32–39).** ADC2 tidak dapat dipakai bersamaan
 > dengan WiFi pada ESP32 — pembacaannya akan gagal begitu WiFi aktif.
+
+### Relay aktuator
+
+- Kebanyakan modul relay 5 V **aktif LOW** (`RELAY_ACTIVE_LOW 1` di `config.h`).
+  Bila relay menyala saat seharusnya mati, ubah ke `0`.
+- Beri catu 5 V terpisah untuk koil relay (`JD-VCC`) dan lepas jumper
+  `VCC–JD-VCC` agar lonjakan dari motor tidak me-reset ESP32.
+- Relay hanya untuk **menyambung kontaktor/beban kecil**. Aerator dan pompa
+  220 V sebaiknya lewat kontaktor dan MCB, dipasang oleh orang yang paham
+  instalasi listrik.
+- Kondisi saat boot diatur `*_ON_AT_BOOT`. Aerator default menyala: setelah
+  listrik padam, kolam tidak dibiarkan tanpa aerasi sampai ada yang
+  menyalakannya dari dashboard.
+
+## Update firmware lewat WiFi (OTA)
+
+Setelah flash pertama via USB, update berikutnya bisa lewat jaringan lokal:
+
+1. Isi `OTA_PASSWORD` di `include/secrets.h` (kosong = OTA nonaktif), lalu
+   flash sekali via USB.
+2. Cari IP device di log serial (`[ota] siap di esp32-node-01.local (192.168.1.50)`)
+   atau di halaman **Perangkat** dashboard.
+3. Upload:
+
+   ```bash
+   FISHPOND_OTA_PASSWORD='<password>' pio run -e esp32dev-ota -t upload --upload-port 192.168.1.50
+   ```
+
+Selama update, relay mempertahankan kondisinya. OTA hanya bekerja di jaringan
+yang sama dengan device; jangan buka port OTA (3232) ke internet.
 
 ### Pembagi tegangan untuk keluaran 5 V
 

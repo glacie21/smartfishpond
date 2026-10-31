@@ -1,3 +1,4 @@
+import { ingestActuatorState, ingestCommandAck } from '../services/deviceControlService.js';
 import { ingestStatus, ingestTelemetry } from '../services/telemetryService.js';
 import { createLogger } from '../utils/logger.js';
 import { parseTopic } from './topics.js';
@@ -54,6 +55,14 @@ export async function handleMessage(topic, buffer) {
 
       case 'status':
         await ingestStatus(identified, { deviceId: parts.deviceId, pondId: parts.pondId });
+        break;
+
+      case 'actuators':
+        await ingestActuatorState(identified, { deviceId: parts.deviceId, pondId: parts.pondId });
+        break;
+
+      case 'ack':
+        await ingestCommandAck(identified, { deviceId: parts.deviceId, pondId: parts.pondId });
         break;
 
       default:

@@ -14,6 +14,8 @@ export default [
         clearTimeout: 'readonly',
          setInterval: 'readonly',
          clearInterval: 'readonly',
+        fetch: 'readonly',
+        AbortSignal: 'readonly',
       },
     },
     rules: {

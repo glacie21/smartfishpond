@@ -76,8 +76,14 @@ export function initSocket(httpServer) {
  */
 export function broadcast(event, payload, { pondId, deviceId } = {}) {
   if (!io) return;
-  if (pondId) io.to(`pond:${pondId}`).emit(event, payload);
-  if (deviceId) io.to(`device:${deviceId}`).emit(event, payload);
+  const rooms = [pondId && `pond:${pondId}`, deviceId && `device:${deviceId}`].filter(Boolean);
+  // Satu emit ke beberapa room: klien yang ada di keduanya hanya menerima sekali.
+  if (rooms.length) io.to(rooms).emit(event, payload);
+}
+
+/** Menyiarkan ke semua klien yang login (mis. alert untuk lonceng notifikasi). */
+export function broadcastAll(event, payload) {
+  io?.emit(event, payload);
 }
 
 export function getIo() {

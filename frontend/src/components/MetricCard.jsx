@@ -5,9 +5,9 @@ import { StatusBadge } from './StatusBadge.jsx';
  * Kartu satu parameter kualitas air: nilai terkini, satuan, status
  * terhadap rentang aman, dan rentang acuannya. Dilengkapi mini gauge.
  */
-export function MetricCard({ metric, value }) {
-  const status = evaluateMetric(metric.key, value);
-  const [min, max] = metric.safeRange;
+export function MetricCard({ metric, value, range = metric.safeRange }) {
+  const status = evaluateMetric(metric.key, value, range);
+  const [min, max] = range;
 
   // Hitung persentase posisi nilai di rentang aman untuk mini gauge
   const safeSpan = max - min;

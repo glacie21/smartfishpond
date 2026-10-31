@@ -3,6 +3,7 @@
 #include <PubSubClient.h>
 #include <WiFi.h>
 
+#include "actuators.h"
 #include "config.h"
 #include "telemetry.h"
 #include "wifi_manager.h"
@@ -22,6 +23,7 @@ PubSubClient client(netClient);
 unsigned long lastAttemptMs = 0;
 
 char statusTopic[96];
+char commandTopic[96];
 
 /** Menyusun topik lengkap: fishpond/<pondId>/<deviceId>/<sub>. */
 void buildTopic(char* out, size_t size, const char* subTopic) {
@@ -29,9 +31,12 @@ void buildTopic(char* out, size_t size, const char* subTopic) {
            subTopic);
 }
 
-/** Callback pesan masuk — disiapkan untuk perintah konfigurasi dari server. */
+/** Callback pesan masuk: saat ini hanya perintah aktuator dari backend. */
 void onMessage(char* topic, byte* payload, unsigned int length) {
   Serial.printf("[mqtt] pesan diterima pada %s (%u byte)\n", topic, length);
+  if (strcmp(topic, commandTopic) == 0) {
+    Actuators::handleCommand(payload, length);
+  }
 }
 
 bool connect() {
@@ -50,7 +55,10 @@ bool connect() {
 
   if (ok) {
     Serial.println("[mqtt] terhubung");
+    // Clean session: langganan hilang tiap putus, jadi subscribe ulang di sini.
+    client.subscribe(commandTopic, MQTT_QOS);
     Telemetry::publishStatus(true);
+    Actuators::publishState();
     Telemetry::flushBuffer();
   } else {
     const int rc = client.state();
@@ -70,6 +78,7 @@ namespace MqttClient {
 
 void begin() {
   buildTopic(statusTopic, sizeof(statusTopic), "status");
+  buildTopic(commandTopic, sizeof(commandTopic), "command");
 #if MQTT_USE_TLS
   // Verifikasi sertifikat broker terhadap CA; tanpa ini TLS rentan MITM.
   netClient.setCACert(MQTT_CA_CERT);

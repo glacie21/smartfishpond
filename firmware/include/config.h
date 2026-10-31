@@ -10,6 +10,11 @@
 #define MQTT_USE_TLS 0
 #endif
 
+// secrets.h lama (sebelum dukungan OTA): OTA nonaktif.
+#ifndef OTA_PASSWORD
+#define OTA_PASSWORD ""
+#endif
+
 // ------------------------------------------------------------
 //  Pin map (ESP32 DevKit v1)
 // ------------------------------------------------------------
@@ -21,6 +26,24 @@
 #define PIN_ULTRASONIC_TRIG 5    // HC-SR04 / JSN-SR04T trigger
 #define PIN_ULTRASONIC_ECHO 18   // HC-SR04 / JSN-SR04T echo
 #define PIN_STATUS_LED      2    // LED onboard sebagai indikator koneksi
+
+// Modul relay untuk aktuator. Relay yang tidak terpasang aman dibiarkan.
+#define PIN_RELAY_AERATOR   25   // aerator / blower oksigen
+#define PIN_RELAY_PUMP      26   // pompa air (sirkulasi / pengisian)
+#define PIN_RELAY_FEEDER    27   // motor pemberi pakan otomatis
+
+// ------------------------------------------------------------
+//  Aktuator
+// ------------------------------------------------------------
+// Kebanyakan modul relay 5V aktif LOW (IN = LOW -> relay menyala).
+#define RELAY_ACTIVE_LOW    1
+// Kondisi saat boot / setelah listrik padam. Aerator default MENYALA:
+// mati lama di malam hari bisa membuat ikan kekurangan oksigen.
+#define AERATOR_ON_AT_BOOT  1
+#define PUMP_ON_AT_BOOT     0
+#define FEEDER_ON_AT_BOOT   0
+// Batas atas durasi auto-off, sama dengan backend (24 jam).
+#define ACTUATOR_MAX_DURATION_S 86400UL
 
 // ------------------------------------------------------------
 //  Interval (milidetik)

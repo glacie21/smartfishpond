@@ -62,7 +62,10 @@ export const config = {
     topics: {
       telemetry: process.env.MQTT_TOPIC_TELEMETRY ?? 'fishpond/+/+/telemetry',
       status: process.env.MQTT_TOPIC_STATUS ?? 'fishpond/+/+/status',
+      actuators: process.env.MQTT_TOPIC_ACTUATORS ?? 'fishpond/+/+/actuators',
+      ack: process.env.MQTT_TOPIC_ACK ?? 'fishpond/+/+/ack',
     },
+    base: process.env.MQTT_TOPIC_BASE ?? 'fishpond',
   },
 
   cors: {
@@ -86,5 +89,30 @@ export const config = {
 
   retention: {
     rawDays: int('RAW_RETENTION_DAYS', 90),
+  },
+
+  alerts: {
+    // Jumlah pembacaan berturut-turut di luar batas sebelum alert dibuka,
+    // agar satu lonjakan noise sensor tidak langsung memicu notifikasi.
+    confirmReadings: int('ALERT_CONFIRM_READINGS', 2),
+    // Device offline lebih lama dari ini baru dianggap masalah (reboot singkat diabaikan).
+    offlineDelaySeconds: int('ALERT_OFFLINE_DELAY_SECONDS', 300),
+  },
+
+  notifications: {
+    telegram: {
+      botToken: process.env.TELEGRAM_BOT_TOKEN || undefined,
+      chatIds: (process.env.TELEGRAM_CHAT_IDS ?? '')
+        .split(',')
+        .map((id) => id.trim())
+        .filter(Boolean),
+    },
+    // 'warning' = kirim semua alert; 'critical' = hanya yang kritis.
+    minSeverity: process.env.NOTIFY_MIN_SEVERITY === 'critical' ? 'critical' : 'warning',
+  },
+
+  commands: {
+    // Perintah tanpa ack dari device setelah sekian detik ditandai timeout.
+    ackTimeoutSeconds: int('COMMAND_ACK_TIMEOUT_SECONDS', 30),
   },
 };

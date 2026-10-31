@@ -59,13 +59,25 @@ export const METRICS = [
 
 export const METRIC_BY_KEY = Object.fromEntries(METRICS.map((m) => [m.key, m]));
 
-/** Status sebuah nilai terhadap rentang amannya. */
-export function evaluateMetric(key, value) {
-  if (value === null || value === undefined) return 'unknown';
-  const metric = METRIC_BY_KEY[key];
-  if (!metric) return 'unknown';
+/**
+ * Rentang aman [min, max] sebuah metrik. `thresholds` adalah objek dari API
+ * (`overview.thresholds`, bisa berisi override per kolam); bila tidak ada,
+ * dipakai `safeRange` bawaan di atas.
+ */
+export function rangeFor(key, thresholds) {
+  const t = thresholds?.[key];
+  return t ? [Number(t.min), Number(t.max)] : METRIC_BY_KEY[key]?.safeRange;
+}
 
-  const [min, max] = metric.safeRange;
+/**
+ * Status sebuah nilai terhadap rentang amannya — aturan yang sama dengan
+ * backend (services/metrics.js) agar kartu dan alert selalu sepakat.
+ */
+export function evaluateMetric(key, value, range = rangeFor(key)) {
+  if (value === null || value === undefined) return 'unknown';
+  if (!range) return 'unknown';
+
+  const [min, max] = range;
   if (value < min || value > max) {
     // Selisih > 15% dari lebar rentang aman dianggap kritis, sisanya waspada.
     const span = max - min;
