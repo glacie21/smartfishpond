@@ -82,8 +82,25 @@ kehabisan RAM.
 
 Menggambar 30 hari data mentah berarti ~86.000 titik per metrik. `date_bin`
 memampatkannya di sisi PostgreSQL menjadi puluhan titik sebelum melintasi
-jaringan. Untuk data yang sangat besar, materialized view `hourly_readings`
-(migrasi 002) menyediakan hasil yang sudah dihitung sebelumnya.
+jaringan.
+
+Bucket ≥ 1 jam (grafik 7 dan 30 hari) dibaca dari tabel rollup
+`readings_hourly`, bukan dari data mentah:
+
+- **Diperbarui bertahap** tiap 5 menit oleh `rollupHourly`. Jam yang dihitung
+  ulang adalah jam dari reading baru sejak rollup terakhir (dilacak lewat
+  `readings.id` di `rollup_state`, jadi data bertimestamp lampau ikut
+  tertangkap) ditambah dua jam terakhir.
+- **Akurat saat digabung** — menyimpan `sum` & `count` per metrik, bukan
+  rata-rata, sehingga rata-rata 6 jam/1 hari tetap benar walau ada nilai null.
+- **Selalu mutakhir** — jam berjalan dan satu jam sebelumnya dihitung langsung
+  dari data mentah lalu digabung dengan rollup dalam satu kueri.
+- **Bertahan melewati retensi** — riwayat panjang tetap ada setelah data mentah
+  dihapus.
+
+Migrasi 002 sempat memakai materialized view `hourly_readings`; view itu
+dihitung ulang penuh dari data mentah, sehingga tidak bisa menyimpan riwayat
+melewati retensi. Migrasi 006 menggantinya.
 
 ## Struktur lapisan backend
 
@@ -105,21 +122,33 @@ langsung ke lapisan service — ia adalah pintu masuk kedua di samping HTTP.
 | `ponds`    | Metadata kolam                                       |
 | `devices`  | Node ESP32, status koneksi, sinyal, waktu terakhir aktif |
 | `readings` | Telemetri mentah; satu baris = satu paket            |
+| `readings_hourly` | Rollup per jam per device (sum/count/min/max tiap metrik) |
+| `rollup_state` | Penanda `readings.id` terakhir yang sudah di-rollup |
+| `users`    | Akun dashboard dan perannya                          |
+| `thresholds` | Rentang aman: default + override per kolam         |
+| `alerts`   | Kejadian alert dari mulai sampai pulih               |
+| `device_commands` | Log perintah aktuator dan hasilnya            |
 
 View pendukung:
 
 - `latest_readings` — pembacaan terbaru per device (`DISTINCT ON`)
-- `hourly_readings` — materialized view agregasi per jam
 
 Indeks utama `(pond_id, recorded_at DESC)` dan `(device_id, recorded_at DESC)`
 mengikuti pola kueri dashboard yang selalu "data terbaru untuk satu kolam".
 
 ## Retensi data
 
-Data mentah dihapus setelah `RAW_RETENTION_DAYS` (default 90 hari) oleh tugas
-latar yang berjalan tiap 6 jam. Setel ke `0` untuk menonaktifkan. Untuk
-menyimpan riwayat panjang, segarkan `hourly_readings` secara berkala sebelum
-data mentahnya kedaluwarsa.
+Tugas latar tiap 6 jam menghapus:
+
+| Data              | Variabel                | Default   |
+| ----------------- | ----------------------- | --------- |
+| `readings` mentah | `RAW_RETENTION_DAYS`    | 90 hari   |
+| `readings_hourly` | `HOURLY_RETENTION_DAYS` | 730 hari  |
+
+Setel ke `0` untuk menonaktifkan. Rollup selalu dijalankan sebelum data mentah
+dihapus, dan penghapusan dibatalkan bila rollup gagal — data tidak pernah
+hilang sebelum masuk `readings_hourly`. Rollup per jam berukuran sekitar 1/120
+data mentah (interval publish 30 detik), sehingga murah disimpan bertahun-tahun.
 
 ## Alert
 

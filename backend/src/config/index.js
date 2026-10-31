@@ -89,6 +89,8 @@ export const config = {
 
   retention: {
     rawDays: int('RAW_RETENTION_DAYS', 90),
+    // Rollup per jam jauh lebih kecil (±1/120 data mentah), jadi disimpan lebih lama.
+    hourlyDays: int('HOURLY_RETENTION_DAYS', 730),
   },
 
   alerts: {

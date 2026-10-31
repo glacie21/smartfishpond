@@ -15,7 +15,6 @@ export function notFoundHandler(req, res) {
  * Error handler terpusat. Harus dipasang paling akhir dan tetap
  * memiliki 4 parameter agar dikenali Express.
  */
-// eslint-disable-next-line no-unused-vars
 export function errorHandler(err, req, res, next) {
   const status = err instanceof HttpError ? err.status : 500;
 
