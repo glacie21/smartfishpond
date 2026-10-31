@@ -1,7 +1,12 @@
 import { NavLink, Outlet } from 'react-router-dom';
 
+import { useAuth } from '../context/AuthContext.jsx';
+
+const ROLE_LABEL = { admin: 'Admin', viewer: 'Viewer' };
+
 /** Kerangka halaman: header navigasi glassmorphism + area konten. */
 export function Layout() {
+  const { user, logout } = useAuth();
   const navClass = ({ isActive }) => `nav__link${isActive ? ' is-active' : ''}`;
 
   return (
@@ -30,6 +35,16 @@ export function Layout() {
             Perangkat
           </NavLink>
         </nav>
+
+        <div className="user-menu">
+          <span className="user-menu__name">
+            {user?.username}
+            <small>{ROLE_LABEL[user?.role] ?? user?.role}</small>
+          </span>
+          <button type="button" className="btn btn--quiet user-menu__logout" onClick={logout}>
+            Keluar
+          </button>
+        </div>
       </header>
 
       <main className="app__main">

@@ -26,20 +26,34 @@ export async function handleMessage(topic, buffer) {
     return;
   }
 
+  if (typeof payload !== 'object' || payload === null || Array.isArray(payload)) {
+    log.warn(`payload pada ${topic} bukan objek JSON`);
+    return;
+  }
+
+  // Topik adalah sumber kebenaran identitas: ACL broker membatasi tiap device
+  // hanya boleh publish ke topik dengan deviceId miliknya sendiri. Payload yang
+  // mengaku sebagai device/kolam lain ditolak agar ACL itu tidak bisa diakali.
+  if (
+    (payload.deviceId !== undefined && payload.deviceId !== parts.deviceId) ||
+    (payload.pondId !== undefined && payload.pondId !== parts.pondId)
+  ) {
+    log.warn(
+      `identitas payload (${payload.pondId}/${payload.deviceId}) tidak cocok dengan topik ${topic}, paket ditolak`,
+    );
+    return;
+  }
+  const identified = { ...payload, deviceId: parts.deviceId, pondId: parts.pondId };
+
   try {
     switch (parts.kind) {
       case 'telemetry':
-        await ingestTelemetry({
-          ...payload,
-          // Topik adalah sumber kebenaran bila payload tidak konsisten.
-          deviceId: payload.deviceId ?? parts.deviceId,
-          pondId: payload.pondId ?? parts.pondId,
-        });
+        await ingestTelemetry(identified);
         log.debug(`telemetri tersimpan dari ${parts.deviceId}`);
         break;
 
       case 'status':
-        await ingestStatus(payload, { deviceId: parts.deviceId, pondId: parts.pondId });
+        await ingestStatus(identified, { deviceId: parts.deviceId, pondId: parts.pondId });
         break;
 
       default:

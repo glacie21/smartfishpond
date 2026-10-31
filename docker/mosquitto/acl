@@ -1,0 +1,20 @@
+# ============================================================
+#  ACL Mosquitto — siapa boleh publish/subscribe ke topik apa.
+#  Format topik: fishpond/<pondId>/<deviceId>/<kind>
+# ============================================================
+
+# Backend: membaca seluruh telemetri dan status.
+user fishpond-backend
+topic read fishpond/#
+
+# Simulator (scripts/simulate-device.js) menyamar sebagai banyak device.
+# HANYA untuk development: kosongkan MQTT_SIMULATOR_PASSWORD di produksi
+# agar akun ini tidak pernah dibuat.
+user fishpond-simulator
+topic write fishpond/#
+
+# Device ESP32: username = deviceId (%u). Sebuah device hanya boleh menulis
+# ke topik dengan deviceId miliknya sendiri, dan membaca perintah untuknya.
+pattern write fishpond/+/%u/telemetry
+pattern write fishpond/+/%u/status
+pattern read fishpond/+/%u/command

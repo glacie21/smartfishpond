@@ -13,6 +13,8 @@ coverage/
 .env.local
 .env.*.local
 firmware/include/secrets.h
+docker/mosquitto/credentials
+docker/mosquitto/certs/
 
 # ---- PlatformIO ----
 .pio/

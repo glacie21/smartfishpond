@@ -20,10 +20,68 @@ Semua respons gagal:
 | 201  | Sumber daya dibuat                     |
 | 204  | Berhasil, tanpa body (penghapusan)     |
 | 400  | Payload/query tidak valid              |
+| 401  | Belum login / token tidak valid atau kedaluwarsa |
+| 403  | Login, tetapi peran tidak cukup (mis. viewer menghapus kolam) |
 | 404  | Tidak ditemukan                        |
 | 409  | Konflik (id sudah dipakai)             |
+| 429  | Terlalu banyak request (rate limit)    |
 | 500  | Kesalahan server                       |
 | 503  | Dependensi (database) tidak tersedia   |
+
+---
+
+## Autentikasi
+
+Semua endpoint **kecuali** `GET /health` dan `POST /auth/login` wajib membawa
+token JWT:
+
+```
+Authorization: Bearer <token>
+```
+
+| Peran    | Hak                                                        |
+| -------- | ---------------------------------------------------------- |
+| `viewer` | Semua endpoint `GET`                                       |
+| `admin`  | Semua endpoint, termasuk `POST/PATCH/DELETE /ponds`        |
+
+Akun dibuat dari CLI (tidak ada endpoint registrasi publik):
+
+```bash
+npm run user:create -- <username> --role admin|viewer
+```
+
+Token berlaku selama `JWT_EXPIRES_IN` (default `12h`). Token bersifat stateless:
+menghapus user atau mengganti perannya baru berlaku setelah token lamanya
+kedaluwarsa. Untuk mencabut semua sesi sekaligus, ganti `JWT_SECRET`.
+
+### `POST /auth/login`
+
+```json
+{ "username": "admin", "password": "rahasia" }
+```
+
+```json
+{
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIs...",
+    "user": { "id": "1", "username": "admin", "role": "admin" }
+  }
+}
+```
+
+Kredensial salah -> `401`. Lebih dari `LOGIN_RATE_LIMIT_MAX` (default 10)
+percobaan gagal per IP dalam 15 menit -> `429`.
+
+### `GET /auth/me`
+
+Identitas pemilik token: `{ "id", "username", "role" }`.
+
+### Rate limit
+
+Seluruh `/api` dibatasi `RATE_LIMIT_MAX` request (default 600) per IP per
+`RATE_LIMIT_WINDOW_MS` (default 15 menit). Sisa kuota ada di header
+`RateLimit`. Bila backend berada di belakang reverse proxy, set `TRUST_PROXY`
+(mis. `1`) agar limit dihitung per IP klien, bukan per IP proxy.
 
 ---
 
@@ -148,7 +206,8 @@ Kolom hasil: `bucket`, `sample_count`, lalu `<metrik>_avg`, `<metrik>_min`,
 `<metrik>_max` untuk tiap metrik.
 
 ```bash
-curl "http://localhost:4000/api/readings/aggregate?pondId=pond-01&bucket=1%20hour&from=2026-09-03T00:00:00Z"
+curl -H "Authorization: Bearer $TOKEN" \
+  "http://localhost:4000/api/readings/aggregate?pondId=pond-01&bucket=1%20hour&from=2026-09-03T00:00:00Z"
 ```
 
 ### `GET /readings/latest/:deviceId`
@@ -159,7 +218,10 @@ Pembacaan terakhir satu device, atau `null` bila belum pernah mengirim.
 
 ## Realtime (Socket.IO)
 
-Endpoint WebSocket berada pada host yang sama (`/socket.io`).
+Endpoint WebSocket berada pada host yang sama (`/socket.io`). Handshake wajib
+membawa token yang sama dengan REST API lewat `auth.token`; tanpa token,
+koneksi ditolak dengan `connect_error`. Server memutus koneksi saat token
+kedaluwarsa (alasan `io server disconnect`).
 
 **Event dari klien:**
 
@@ -179,7 +241,7 @@ Endpoint WebSocket berada pada host yang sama (`/socket.io`).
 ```js
 import { io } from 'socket.io-client';
 
-const socket = io('http://localhost:4000');
+const socket = io('http://localhost:4000', { auth: { token } });
 socket.on('connect', () => socket.emit('subscribe:pond', 'pond-01'));
 socket.on('reading:new', (reading) => console.log(reading));
 ```
