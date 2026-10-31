@@ -1,12 +1,16 @@
 import { NavLink, Outlet } from 'react-router-dom';
 
 import { useAuth } from '../context/AuthContext.jsx';
+import { useAlertFeed } from '../hooks/useAlerts.js';
 
 const ROLE_LABEL = { admin: 'Admin', viewer: 'Viewer' };
 
 /** Kerangka halaman: header navigasi glassmorphism + area konten. */
 export function Layout() {
   const { user, logout } = useAuth();
+  // Jumlah alert aktif untuk lencana di menu, diperbarui realtime.
+  const { alerts: openAlerts } = useAlertFeed({ status: 'open' });
+  const criticalCount = openAlerts.filter((a) => a.severity === 'critical').length;
   const navClass = ({ isActive }) => `nav__link${isActive ? ' is-active' : ''}`;
 
   return (
@@ -33,6 +37,18 @@ export function Layout() {
           <NavLink to="/devices" className={navClass}>
             <span aria-hidden="true" style={{ marginRight: 6 }}>📡</span>
             Perangkat
+          </NavLink>
+          <NavLink to="/alerts" className={navClass}>
+            <span aria-hidden="true" style={{ marginRight: 6 }}>🚨</span>
+            Alert
+            {openAlerts.length > 0 && (
+              <span
+                className={`nav__badge${criticalCount ? ' nav__badge--critical' : ''}`}
+                aria-label={`${openAlerts.length} alert aktif`}
+              >
+                {openAlerts.length}
+              </span>
+            )}
           </NavLink>
         </nav>
 

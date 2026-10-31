@@ -50,6 +50,9 @@ function createNode(index) {
     pondId,
     deviceId: `esp32-sim-0${index + 1}`,
     startedAt: Date.now(),
+    // Relay virtual; aerator menyala saat boot seperti default firmware.
+    actuators: { aerator: true, pump: false, feeder: false },
+    autoOffTimers: {},
     state: {
       ph: random(6.8, 7.6),
       tds: random(180, 380),
@@ -74,7 +77,9 @@ function nextReading(node) {
   const s = node.state;
   s.ph = clamp(s.ph + random(-0.05, 0.05), 6.2, 8.8);
   s.tds = clamp(s.tds + random(-6, 6), 80, 700);
-  s.dissolvedOxygen = clamp(s.dissolvedOxygen + random(-0.15, 0.15), 3.5, 11);
+  // Aerator menyala menaikkan oksigen terlarut, mati membuatnya turun pelan.
+  const aeration = node.actuators.aerator ? 0.04 : -0.06;
+  s.dissolvedOxygen = clamp(s.dissolvedOxygen + aeration + random(-0.15, 0.15), 3.5, 11);
   s.turbidity = clamp(s.turbidity + random(-1.5, 1.5), 1, 90);
   s.waterLevel = clamp(s.waterLevel + random(-0.4, 0.4), 40, 130);
 
@@ -105,9 +110,58 @@ const client = mqtt.connect(MQTT_URL, {
   password: MQTT_PASSWORD,
 });
 
+const topicOf = (node, kind) => `fishpond/${node.pondId}/${node.deviceId}/${kind}`;
+
+/** Status relay (retained), meniru firmware. */
+function publishActuators(node) {
+  client.publish(topicOf(node, 'actuators'), JSON.stringify(node.actuators), { qos: 1, retain: true });
+}
+
+/** Menjalankan perintah dari backend lalu membalas lewat topik ack. */
+function handleCommand(node, command) {
+  const { id, actuator, state, durationS } = command;
+  const reply = (ok, error = null) =>
+    client.publish(topicOf(node, 'ack'), JSON.stringify({ id, ok, error }), { qos: 1 });
+
+  if (!(actuator in node.actuators)) {
+    reply(false, `aktuator "${actuator}" tidak terpasang`);
+    return;
+  }
+
+  clearTimeout(node.autoOffTimers[actuator]);
+  node.actuators[actuator] = Boolean(state);
+  if (state && durationS) {
+    node.autoOffTimers[actuator] = setTimeout(() => {
+      node.actuators[actuator] = false;
+      publishActuators(node);
+      console.log(`  ⏱ ${node.deviceId}: ${actuator} mati otomatis setelah ${durationS} detik`);
+    }, durationS * 1000);
+  }
+
+  console.log(
+    `  ⚡ ${node.deviceId}: ${actuator} ${state ? 'ON' : 'OFF'}` + (durationS ? ` (${durationS} detik)` : ''),
+  );
+  reply(true);
+  publishActuators(node);
+}
+
+client.on('message', (topic, buffer) => {
+  const node = nodes.find((n) => topic === topicOf(n, 'command'));
+  if (!node) return;
+  try {
+    handleCommand(node, JSON.parse(buffer.toString()));
+  } catch (err) {
+    console.error(`  perintah tidak valid untuk ${node.deviceId}: ${err.message}`);
+  }
+});
+
+let telemetryTimer = null;
+
 client.on('connect', () => {
   console.log(`Terhubung ke ${MQTT_URL}`);
   console.log(`${nodes.length} node disimulasikan setiap ${INTERVAL_MS} ms. Ctrl+C untuk berhenti.\n`);
+
+  client.subscribe(nodes.map((node) => topicOf(node, 'command')), { qos: 1 });
 
   // Umumkan status online (retained), meniru firmware.
   for (const node of nodes) {
@@ -123,9 +177,12 @@ client.on('connect', () => {
       }),
       { qos: 1, retain: true },
     );
+    publishActuators(node);
   }
 
-  setInterval(() => {
+  // Event connect juga terpicu saat reconnect: jangan menggandakan timer.
+  if (telemetryTimer) return;
+  telemetryTimer = setInterval(() => {
     for (const node of nodes) {
       const payload = {
         deviceId: node.deviceId,

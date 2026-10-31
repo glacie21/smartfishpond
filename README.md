@@ -71,8 +71,11 @@ tanpa polling.
 - 📈 **Monitoring realtime** — 6 parameter kualitas air, update tanpa refresh
 - 📡 **MQTT QoS 1 + Last Will** — status device online/offline otomatis terdeteksi
 - 🗄 **Time-series di PostgreSQL** — plus agregasi per jam/hari untuk grafik rentang panjang
-- 🔌 **Auto-registrasi** — kolam & device terbentuk sendiri saat telemetri pertama masuk
+- 🚨 **Alert & notifikasi Telegram** — ambang batas per kolam, debounce + hysteresis, alert device offline
+- 🎛️ **Kendali aktuator** — aerator, pompa, dan feeder dari dashboard, dengan konfirmasi device & auto-off
+- 🔌 **Auto-registrasi** — kolam & device terbentuk sendiri saat telemetri pertama masuk; kelola lewat dashboard
 - 💾 **Buffer offline di firmware** — data tidak hilang saat koneksi terputus
+- 📶 **Update firmware via WiFi (OTA)** — tanpa membongkar box di kolam
 - 🔐 **Aman secara default** — login JWT dengan peran admin/viewer, rate limit, broker MQTT berpassword + ACL per device
 - 🧪 **Simulator device** — bisa dicoba penuh tanpa hardware sama sekali
 - 🐳 **Docker Compose** — seluruh stack jalan dengan satu perintah

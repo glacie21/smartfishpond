@@ -3,18 +3,22 @@
 #  Format topik: fishpond/<pondId>/<deviceId>/<kind>
 # ============================================================
 
-# Backend: membaca seluruh telemetri dan status.
+# Backend: membaca seluruh trafik device, dan mengirim perintah aktuator.
 user fishpond-backend
 topic read fishpond/#
+topic write fishpond/+/+/command
 
-# Simulator (scripts/simulate-device.js) menyamar sebagai banyak device.
+# Simulator (scripts/simulate-device.js) menyamar sebagai banyak device:
+# menulis telemetri/status/ack dan membaca perintah untuk node virtualnya.
 # HANYA untuk development: kosongkan MQTT_SIMULATOR_PASSWORD di produksi
 # agar akun ini tidak pernah dibuat.
 user fishpond-simulator
-topic write fishpond/#
+topic readwrite fishpond/#
 
 # Device ESP32: username = deviceId (%u). Sebuah device hanya boleh menulis
 # ke topik dengan deviceId miliknya sendiri, dan membaca perintah untuknya.
 pattern write fishpond/+/%u/telemetry
 pattern write fishpond/+/%u/status
+pattern write fishpond/+/%u/actuators
+pattern write fishpond/+/%u/ack
 pattern read fishpond/+/%u/command

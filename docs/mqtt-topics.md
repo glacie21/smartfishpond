@@ -1,6 +1,6 @@
 # Skema Topik & Payload MQTT
 
-Semua komunikasi device -> server memakai MQTT dengan QoS 1.
+Komunikasi device <-> server memakai MQTT. Backend berlangganan dengan QoS 1.
 
 ## Format topik
 
@@ -13,14 +13,29 @@ fishpond/<pondId>/<deviceId>/<kind>
 | `fishpond` | `fishpond`      | Prefix tetap (`MQTT_TOPIC_BASE` di firmware) |
 | `pondId`   | `pond-01`       | Identitas kolam                              |
 | `deviceId` | `esp32-node-01` | Identitas node, unik seluruh sistem          |
-| `kind`     | `telemetry`     | Jenis pesan: `telemetry` atau `status`       |
+| `kind`     | `telemetry`     | Jenis pesan, lihat tabel di bawah            |
+
+| `kind`      | Arah              | Retained | Isi                                  |
+| ----------- | ----------------- | -------- | ------------------------------------ |
+| `telemetry` | device → server   | tidak    | Pembacaan sensor                     |
+| `status`    | device → server   | ya       | Online/offline (termasuk Last Will)  |
+| `actuators` | device → server   | ya       | Status relay terkini                 |
+| `ack`       | device → server   | tidak    | Balasan sebuah perintah              |
+| `command`   | server → device   | tidak    | Perintah nyala/mati aktuator         |
 
 Backend berlangganan dengan wildcard:
 
 ```
 fishpond/+/+/telemetry
 fishpond/+/+/status
+fishpond/+/+/actuators
+fishpond/+/+/ack
 ```
+
+**Kunci kolam.** Device yang sudah terdaftar terikat pada kolamnya. Pesan
+dengan `pondId` di topik yang berbeda dari kolam terdaftar device akan ditolak
+backend. Pindahkan device lewat `PATCH /api/devices/:id`, lalu sesuaikan
+`POND_ID` di firmware.
 
 ## `telemetry` — pembacaan sensor
 
@@ -94,6 +109,49 @@ Sebagai jaring pengaman (Last Will bisa hilang bila broker restart), backend
 menandai device `offline` bila tidak ada paket selama 180 detik — lihat
 `maintenanceService.js`.
 
+## Kontrol aktuator
+
+### `command` — perintah dari backend
+
+Dikirim oleh `POST /api/devices/:id/commands`. Firmware berlangganan topik
+ini setiap kali tersambung (clean session, jadi perintah saat device offline
+**tidak** diantre — backend menolaknya dengan 409).
+
+```json
+{ "id": "0b5a1f4e-2c7d-4a8b-9e3f-1d2c3b4a5f60", "actuator": "aerator", "state": true, "durationS": 600 }
+```
+
+| Field       | Keterangan                                                    |
+| ----------- | ------------------------------------------------------------- |
+| `id`        | UUID perintah; wajib disertakan kembali di `ack`               |
+| `actuator`  | `aerator`, `pump`, `feeder`                                   |
+| `state`     | `true` nyala, `false` mati                                    |
+| `durationS` | `null` atau detik; device mematikan sendiri setelah durasi habis |
+
+Auto-off dijalankan oleh **device**, bukan server, sehingga feeder tetap
+berhenti walau koneksi putus di tengah jalan.
+
+### `ack` — balasan device
+
+```json
+{ "id": "0b5a1f4e-2c7d-4a8b-9e3f-1d2c3b4a5f60", "ok": true, "error": null }
+```
+
+`ok: false` dengan `error` (mis. `"aktuator tidak terpasang"`) menandai
+perintah gagal. Backend hanya menerima ack dari device yang memang dituju.
+
+### `actuators` — status relay (retained)
+
+Diterbitkan saat connect, setelah setiap perintah, dan saat auto-off.
+
+```json
+{ "aerator": true, "pump": false, "feeder": false }
+```
+
+Kondisi saat boot diatur `*_ON_AT_BOOT` di `firmware/include/config.h`;
+aerator default **menyala** agar listrik padam di malam hari tidak membuat
+kolam kekurangan oksigen.
+
 ## Publikasi manual untuk pengujian
 
 Broker mewajibkan login. Publish sebagai device memakai kredensialnya dari
@@ -151,8 +209,9 @@ Menghapus baris lalu me-restart broker langsung mencabut akses device tersebut.
 Backend juga **menolak** paket yang `deviceId`/`pondId` di payload-nya berbeda
 dari topik, sehingga ACL tidak bisa diakali lewat isi payload.
 
-> Batasan: segmen `pondId` pada topik belum dikunci per device. Device yang
-> bobol masih bisa mengirim data atas namanya sendiri ke kolam lain.
+Segmen `pondId` tidak dikunci di ACL broker, tetapi backend menolak pesan
+dari device ke kolam selain kolam terdaftarnya (lihat **Kunci kolam** di atas).
+Device yang bobol tidak bisa mengotori data kolam lain.
 
 ### TLS (disarankan bila broker diakses dari luar jaringan lokal)
 

@@ -121,14 +121,45 @@ latar yang berjalan tiap 6 jam. Setel ke `0` untuk menonaktifkan. Untuk
 menyimpan riwayat panjang, segarkan `hourly_readings` secara berkala sebelum
 data mentahnya kedaluwarsa.
 
+## Alert
+
+Setiap reading yang tersimpan dievaluasi `alertService` terhadap ambang kolam
+(tabel `thresholds`: default + override per kolam). Alert disimpan sebagai
+kejadian dengan awal dan akhir (`alerts.started_at` / `resolved_at`), paling
+banyak satu alert terbuka per device-metrik (unique index parsial).
+
+- **Debounce** — butuh `ALERT_CONFIRM_READINGS` pembacaan buruk berturut-turut;
+  hitungannya di memori karena kehilangan saat restart hanya menunda alert.
+- **Hysteresis** — pulih setelah nilai masuk rentang aman dengan margin 5%,
+  di sisi tempat pelanggaran terjadi.
+- **Offline** — tugas latar tiap 60 detik membuka alert untuk device yang
+  offline lebih dari `ALERT_OFFLINE_DELAY_SECONDS`, sehingga reboot singkat
+  tidak memicu notifikasi.
+
+Notifikasi (`notificationService`) dikirim tanpa menahan proses ingest dan
+tidak pernah melempar error: Telegram yang down tidak boleh menghentikan
+penyimpanan data.
+
+## Kontrol aktuator
+
+```
+Dashboard ──POST /devices/:id/commands──► backend ──.../command──► ESP32
+    ▲                                        │                         │
+    └──── command:updated / device:actuators ┴◄── .../ack, .../actuators
+```
+
+Setiap perintah dicatat di `device_commands` (audit siapa & kapan). Status
+`sent` → `done`/`failed` dari ack device, atau `timeout` oleh tugas latar.
+Auto-off (`durationS`) dijalankan firmware agar tetap berhenti walau koneksi
+putus.
+
 ## Arah pengembangan lanjutan
 
-Struktur repo sudah menyiapkan tempat untuk penambahan berikut:
-
-- **Kontrol aktuator** — tambahkan topik `.../command`, subscribe di firmware,
-  dan endpoint `POST /api/devices/:id/command` di backend.
-- **Notifikasi** — rule engine ambang batas di `services/`, pengirim
-  Telegram/WhatsApp di `services/notification/`.
+- **Aturan otomatis** — mis. nyalakan aerator saat DO di bawah ambang, di
+  firmware (tetap jalan saat offline) atau sebagai rule di backend.
+- **Kanal notifikasi lain** — WhatsApp/email di `notificationService`.
+- **OTA jarak jauh** — saat ini OTA hanya di jaringan lokal (ArduinoOTA); untuk
+  device di lokasi lain, tambahkan HTTP OTA yang diperintah lewat `.../command`.
 - **Kepemilikan kolam** — login JWT dan peran admin/viewer sudah ada
   (`middleware/auth.js`, tabel `users`); langkah berikutnya relasi user ↔ kolam
   agar tiap pengguna hanya melihat kolamnya sendiri.

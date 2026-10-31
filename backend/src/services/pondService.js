@@ -2,6 +2,7 @@ import * as deviceRepository from '../repositories/deviceRepository.js';
 import * as pondRepository from '../repositories/pondRepository.js';
 import * as readingRepository from '../repositories/readingRepository.js';
 import { HttpError, notFound } from '../utils/errors.js';
+import * as thresholdService from './thresholdService.js';
 
 export function listPonds() {
   return pondRepository.findAll();
@@ -30,18 +31,20 @@ export async function deletePond(id) {
   if (!deleted) throw notFound(`Kolam "${id}" tidak ditemukan`);
 }
 
-/** Kondisi terkini satu kolam: metadata + device + pembacaan terbaru. */
+/** Kondisi terkini satu kolam: metadata + device + pembacaan terbaru + ambang aman. */
 export async function getPondOverview(id) {
   const pond = await getPond(id);
-  const [devices, latest] = await Promise.all([
+  const [devices, latest, thresholds] = await Promise.all([
     deviceRepository.findAll({ pondId: id }),
     readingRepository.findLatestByPond(id),
+    thresholdService.getEffective(id),
   ]);
 
   return {
     pond,
     devices,
     latestReadings: latest,
+    thresholds,
     onlineCount: devices.filter((d) => d.status === 'online').length,
   };
 }

@@ -2,6 +2,7 @@ import { Route, Routes } from 'react-router-dom';
 
 import { Layout } from './components/Layout.jsx';
 import { RequireAuth } from './components/RequireAuth.jsx';
+import { Alerts } from './pages/Alerts.jsx';
 import { Dashboard } from './pages/Dashboard.jsx';
 import { Devices } from './pages/Devices.jsx';
 import { Login } from './pages/Login.jsx';
@@ -17,6 +18,7 @@ export default function App() {
           <Route index element={<Dashboard />} />
           <Route path="ponds/:pondId" element={<PondDetail />} />
           <Route path="devices" element={<Devices />} />
+          <Route path="alerts" element={<Alerts />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Route>

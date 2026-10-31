@@ -3,11 +3,14 @@ import * as deviceRepository from '../repositories/deviceRepository.js';
 import * as readingRepository from '../repositories/readingRepository.js';
 import { broadcast } from '../realtime/socket.js';
 import { createLogger } from '../utils/logger.js';
+import * as alertService from './alertService.js';
+import * as deviceControlService from './deviceControlService.js';
 
 const log = createLogger('maintenance');
 
 const STALE_THRESHOLD_SECONDS = 180; // 3x interval publish default (30 detik)
 const STALE_CHECK_INTERVAL_MS = 60_000;
+const COMMAND_CHECK_INTERVAL_MS = 10_000;
 const RETENTION_INTERVAL_MS = 6 * 60 * 60 * 1000; // 6 jam
 
 /**
@@ -16,13 +19,32 @@ const RETENTION_INTERVAL_MS = 6 * 60 * 60 * 1000; // 6 jam
  */
 async function sweepStaleDevices() {
   try {
-    const staleIds = await deviceRepository.markStaleOffline(STALE_THRESHOLD_SECONDS);
-    for (const id of staleIds) {
+    const stale = await deviceRepository.markStaleOffline(STALE_THRESHOLD_SECONDS);
+    for (const { id, pond_id: pondId } of stale) {
       log.warn(`${id} tidak mengirim data > ${STALE_THRESHOLD_SECONDS} detik, ditandai offline`);
-      broadcast('device:status', { id, status: 'offline' }, { deviceId: id });
+      broadcast('device:status', { id, status: 'offline' }, { pondId, deviceId: id });
     }
   } catch (err) {
     log.error('gagal memeriksa device stale', err.message);
+  }
+}
+
+/** Stale check lalu alert offline — berurutan agar status offline sudah terbaru. */
+async function runDeviceChecks() {
+  await sweepStaleDevices();
+  try {
+    await alertService.openOfflineAlerts();
+  } catch (err) {
+    log.error('gagal memeriksa alert device offline', err.message);
+  }
+}
+
+/** Perintah aktuator tanpa balasan -> timeout. Dicek sering agar UI cepat tahu. */
+async function sweepPendingCommands() {
+  try {
+    await deviceControlService.expirePendingCommands();
+  } catch (err) {
+    log.error('gagal memeriksa perintah tanpa balasan', err.message);
   }
 }
 
@@ -41,16 +63,17 @@ async function pruneOldReadings() {
 
 /** Menjadwalkan tugas latar; mengembalikan fungsi untuk menghentikannya. */
 export function startMaintenanceJobs() {
-  const staleTimer = setInterval(sweepStaleDevices, STALE_CHECK_INTERVAL_MS);
-  const retentionTimer = setInterval(pruneOldReadings, RETENTION_INTERVAL_MS);
+  const timers = [
+    setInterval(runDeviceChecks, STALE_CHECK_INTERVAL_MS),
+    setInterval(sweepPendingCommands, COMMAND_CHECK_INTERVAL_MS),
+    setInterval(pruneOldReadings, RETENTION_INTERVAL_MS),
+  ];
 
   // Timer tidak boleh menahan proses tetap hidup saat shutdown.
-  staleTimer.unref();
-  retentionTimer.unref();
-  log.info('tugas latar berjalan (pemeriksaan device stale + retensi data)');
+  for (const timer of timers) timer.unref();
+  log.info('tugas latar berjalan (device stale, alert offline, timeout perintah, retensi data)');
 
   return () => {
-    clearInterval(staleTimer);
-    clearInterval(retentionTimer);
+    for (const timer of timers) clearInterval(timer);
   };
 }

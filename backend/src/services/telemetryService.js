@@ -1,9 +1,10 @@
 import * as deviceRepository from '../repositories/deviceRepository.js';
-import * as pondRepository from '../repositories/pondRepository.js';
 import * as readingRepository from '../repositories/readingRepository.js';
 import { badRequest } from '../utils/errors.js';
 import { createLogger } from '../utils/logger.js';
 import { broadcast } from '../realtime/socket.js';
+import * as alertService from './alertService.js';
+import { resolveReportingDevice as resolveDevice } from './deviceService.js';
 import {
   PLAUSIBLE_RANGE,
   statusPayloadSchema,
@@ -37,7 +38,7 @@ function sanitizeMetrics(metrics, deviceId) {
 
 /**
  * Memproses satu paket telemetri: validasi -> auto-provision kolam & device
- * -> simpan -> siarkan ke dashboard.
+ * -> simpan -> siarkan ke dashboard -> evaluasi ambang batas (alert).
  *
  * @param raw payload hasil JSON.parse
  * @returns baris reading yang tersimpan
@@ -51,9 +52,7 @@ export async function ingestTelemetry(raw) {
   const { deviceId, pondId, timestamp, rssi, uptime, metrics } = parsed.data;
   const clean = sanitizeMetrics(metrics, deviceId);
 
-  // Urutannya penting: kolam dulu, lalu device (foreign key).
-  await pondRepository.ensureExists(pondId);
-  await deviceRepository.ensureExists(deviceId, pondId);
+  await resolveDevice(deviceId, pondId);
 
   const reading = await readingRepository.insert({
     deviceId,
@@ -70,6 +69,13 @@ export async function ingestTelemetry(raw) {
   });
 
   broadcast('reading:new', reading, { pondId, deviceId });
+
+  // Data sudah aman tersimpan; kegagalan alert tidak boleh membatalkannya.
+  try {
+    await alertService.evaluateReading(reading);
+  } catch (err) {
+    log.error(`evaluasi alert gagal untuk ${deviceId}: ${err.message}`);
+  }
   return reading;
 }
 
@@ -86,8 +92,7 @@ export async function ingestStatus(raw, { deviceId, pondId }) {
     throw badRequest('deviceId/pondId tidak dapat ditentukan dari topik maupun payload');
   }
 
-  await pondRepository.ensureExists(resolvedPondId);
-  await deviceRepository.ensureExists(resolvedDeviceId, resolvedPondId);
+  await resolveDevice(resolvedDeviceId, resolvedPondId);
 
   const device = await deviceRepository.updateStatus(resolvedDeviceId, {
     status: parsed.data.status,
@@ -98,5 +103,13 @@ export async function ingestStatus(raw, { deviceId, pondId }) {
 
   log.info(`${resolvedDeviceId} -> ${parsed.data.status}`);
   broadcast('device:status', device, { pondId: resolvedPondId, deviceId: resolvedDeviceId });
+
+  if (parsed.data.status === 'online') {
+    try {
+      await alertService.resolveDeviceOffline(resolvedDeviceId);
+    } catch (err) {
+      log.error(`gagal menutup alert offline ${resolvedDeviceId}: ${err.message}`);
+    }
+  }
   return device;
 }

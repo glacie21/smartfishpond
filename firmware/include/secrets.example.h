@@ -32,3 +32,8 @@
   "-----BEGIN CERTIFICATE-----\n" \
   "...isi ca.crt...\n" \
   "-----END CERTIFICATE-----\n"
+
+// --- Update firmware via WiFi (OTA) ---
+// Kosong = OTA nonaktif. Isi password acak yang panjang, lalu upload dengan:
+//   FISHPOND_OTA_PASSWORD=<password> pio run -e esp32dev-ota -t upload --upload-port <ip-device>
+#define OTA_PASSWORD    ""

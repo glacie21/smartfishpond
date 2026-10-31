@@ -175,7 +175,144 @@ Menghapus kolam **beserta seluruh device dan pembacaannya** (`ON DELETE CASCADE`
 
 ### `GET /devices/:id`
 
-Detail device + pembacaan terakhirnya (`latestReading`).
+Detail device + pembacaan terakhirnya (`latestReading`). Kolom `actuators`
+berisi status relay terakhir yang dilaporkan device, mis.
+`{ "aerator": true, "pump": false, "feeder": false }`.
+
+### `POST /devices` — admin
+
+Mendaftarkan device sebelum menyala, sekaligus menetapkan kolamnya.
+
+```json
+{ "id": "esp32-node-03", "pondId": "pond-03", "name": "Node Kolam C" }
+```
+
+`404` bila kolam tidak ada, `409` bila id sudah terdaftar.
+
+### `PATCH /devices/:id` — admin
+
+```json
+{ "name": "Node Kolam C", "pondId": "pond-02" }
+```
+
+> **Kunci kolam.** Device terikat pada kolam terdaftarnya: pesan MQTT yang
+> topiknya menyebut kolam lain **ditolak**. Saat memindah device lewat
+> endpoint ini, ganti juga `POND_ID` di firmware.
+
+### `DELETE /devices/:id` — admin
+
+Menghapus device beserta pembacaan, alert, dan log perintahnya. Device yang
+masih menyala akan terdaftar ulang otomatis; cabut juga kredensial MQTT-nya
+di `docker/mosquitto/credentials`.
+
+### `POST /devices/:id/commands` — admin
+
+Menyalakan/mematikan aktuator lewat MQTT.
+
+```json
+{ "actuator": "feeder", "state": true, "durationS": 10 }
+```
+
+| Field       | Keterangan                                                          |
+| ----------- | ------------------------------------------------------------------- |
+| `actuator`  | `aerator`, `pump`, atau `feeder`                                    |
+| `state`     | `true` = nyala, `false` = mati                                      |
+| `durationS` | Opsional, hanya untuk `state: true`. Device mematikan sendiri setelah sekian detik (maks. 86400) |
+
+Respons `202` berisi perintah berstatus `sent`. Hasilnya menyusul lewat event
+Socket.IO `command:updated`:
+
+| Status    | Arti                                                   |
+| --------- | ------------------------------------------------------ |
+| `sent`    | Terkirim ke broker, menunggu balasan device            |
+| `done`    | Device menjalankan perintah                            |
+| `failed`  | Device menolak (mis. aktuator tidak terpasang) atau broker putus |
+| `timeout` | Tidak ada balasan dalam `COMMAND_ACK_TIMEOUT_SECONDS` (default 30) |
+
+`409` bila device offline (perintah tidak diantre), `503` bila broker tidak tersambung.
+
+### `GET /devices/:id/commands`
+
+Riwayat perintah terbaru (audit: siapa, kapan, hasilnya). Query `limit` (default 20, maks. 100).
+
+---
+
+## Ambang batas
+
+Rentang aman tiap metrik. Ada **default** untuk semua kolam, dan bisa
+**diganti per kolam**. Dipakai untuk evaluasi alert di backend serta kartu dan
+grafik di dashboard. `GET /ponds/:id/overview` juga menyertakan `thresholds`.
+
+Metrik: `temperature`, `ph`, `tds`, `dissolved_oxygen`, `turbidity`, `water_level`.
+
+### `GET /thresholds?pondId=pond-01`
+
+```json
+{
+  "data": {
+    "dissolved_oxygen": { "min": 5, "max": 12, "source": "default" },
+    "temperature": { "min": 27, "max": 31, "source": "pond" }
+  }
+}
+```
+
+Tanpa `pondId`, yang dikembalikan hanya default.
+
+### `PUT /thresholds/:metric` — admin
+
+```json
+{ "pondId": "pond-01", "min": 27, "max": 31 }
+```
+
+Tanpa `pondId` (atau `null`) mengubah **default** semua kolam. `min` harus < `max`.
+
+### `DELETE /thresholds/:metric?pondId=pond-01` — admin
+
+Menghapus override; kolam kembali memakai default.
+
+---
+
+## Alert
+
+Alert dibuat otomatis oleh backend:
+
+- **Metrik** — nilai di luar ambang selama `ALERT_CONFIRM_READINGS` pembacaan
+  berturut-turut (default 2). Severity `warning`/`critical` memakai aturan yang
+  sama dengan dashboard (selisih > 15% lebar rentang = kritis). Alert pulih
+  setelah nilai kembali normal melewati margin 5% (hysteresis), agar tidak
+  buka-tutup di garis batas.
+- **Device offline** — device offline lebih dari `ALERT_OFFLINE_DELAY_SECONDS`
+  (default 300). Pulih saat device mengirim status/telemetri lagi.
+
+Notifikasi dikirim saat alert dibuka, memburuk (waspada → kritis), dan pulih.
+Kanal saat ini: Telegram (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_IDS`).
+
+### `GET /alerts`
+
+| Query    | Default | Keterangan                      |
+| -------- | ------- | ------------------------------- |
+| `status` | `all`   | `open`, `resolved`, atau `all`  |
+| `pondId` | —       | Saring per kolam                |
+| `limit`  | 100     | Maks. 500                       |
+
+```json
+{
+  "data": [{
+    "id": 12, "type": "metric", "metric": "dissolved_oxygen", "severity": "critical",
+    "value": 3.2, "min_value": 5, "max_value": 12,
+    "message": "Oksigen terlarut 3.2 mg/L di bawah batas aman 5 mg/L",
+    "pond_id": "pond-01", "pond_name": "Kolam A - Nila",
+    "device_id": "esp32-node-01", "device_name": "Node Kolam A",
+    "started_at": "...", "resolved_at": null,
+    "acknowledged_at": null, "acknowledged_by": null
+  }]
+}
+```
+
+### `POST /alerts/:id/acknowledge`
+
+Menandai alert sudah ditangani (semua user yang login). Tidak menutup alert;
+alert tetap terbuka sampai kondisinya pulih. `400` bila sudah ditandai.
 
 ---
 
@@ -233,10 +370,14 @@ kedaluwarsa (alasan `io server disconnect`).
 
 **Event dari server:**
 
-| Event            | Payload                        | Kapan                        |
-| ---------------- | ------------------------------ | ---------------------------- |
-| `reading:new`    | Baris reading yang baru masuk  | Tiap telemetri tersimpan     |
-| `device:status`  | Baris device                   | Device online/offline berubah |
+| Event              | Payload                                   | Penerima          | Kapan                          |
+| ------------------ | ----------------------------------------- | ----------------- | ------------------------------ |
+| `reading:new`      | Baris reading yang baru masuk             | room kolam/device | Tiap telemetri tersimpan       |
+| `device:status`    | Baris device                              | room kolam/device | Device online/offline berubah  |
+| `device:actuators` | `{ id, actuators, actuators_updated_at }` | room kolam/device | Device melaporkan status relay |
+| `command:updated`  | Baris perintah                            | room kolam/device | Perintah dikirim/dibalas/timeout |
+| `alert:updated`    | Baris alert (+ `pond_name`, `device_name`) | semua klien      | Alert dibuka, memburuk, atau ditandai |
+| `alert:resolved`   | Baris alert                               | semua klien       | Alert pulih                    |
 
 ```js
 import { io } from 'socket.io-client';
