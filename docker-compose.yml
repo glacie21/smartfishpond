@@ -33,8 +33,15 @@ services:
     ports:
       - "${MQTT_PORT:-1883}:1883"
       - "${MQTT_WS_PORT:-9001}:9001"
+    environment:
+      MQTT_BACKEND_PASSWORD: ${MQTT_BACKEND_PASSWORD:-}
+      MQTT_SIMULATOR_PASSWORD: ${MQTT_SIMULATOR_PASSWORD:-}
+    # Entrypoint menyusun password_file & ACL dari docker/mosquitto/
+    # sebelum broker berjalan (lihat docker-entrypoint.sh).
+    entrypoint: ["sh", "/mosquitto/setup/docker-entrypoint.sh"]
+    command: ["/usr/sbin/mosquitto", "-c", "/mosquitto/config/mosquitto.conf"]
     volumes:
-      - ./docker/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./docker/mosquitto:/mosquitto/setup:ro
       - mosquitto_data:/mosquitto/data
       - mosquitto_log:/mosquitto/log
 
@@ -53,6 +60,10 @@ services:
       PORT: 4000
       DATABASE_URL: postgres://${POSTGRES_USER:-fishpond}:${POSTGRES_PASSWORD:-fishpond}@postgres:5432/${POSTGRES_DB:-smartfishpond}
       MQTT_URL: mqtt://mosquitto:1883
+      MQTT_USERNAME: fishpond-backend
+      MQTT_PASSWORD: ${MQTT_BACKEND_PASSWORD:-}
+      # Kosong = backend menolak start (wajib di produksi).
+      JWT_SECRET: ${JWT_SECRET:-}
       CORS_ORIGIN: http://localhost:${FRONTEND_PORT:-5173}
     ports:
       - "${BACKEND_PORT:-4000}:4000"

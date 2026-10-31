@@ -1,9 +1,12 @@
 import { Server } from 'socket.io';
 
 import { config } from '../config/index.js';
+import { verifyToken } from '../services/authService.js';
 import { createLogger } from '../utils/logger.js';
 
 const log = createLogger('socket');
+
+const MAX_TIMEOUT_MS = 2 ** 31 - 1;
 
 /** @type {Server | null} */
 let io = null;
@@ -19,8 +22,28 @@ export function initSocket(httpServer) {
     cors: { origin: config.cors.origin, methods: ['GET', 'POST'] },
   });
 
+  // Handshake wajib membawa JWT yang sama dengan REST API:
+  // io(url, { auth: { token } }).
+  io.use((socket, next) => {
+    try {
+      socket.data.user = verifyToken(socket.handshake.auth?.token);
+      next();
+    } catch (err) {
+      next(new Error(err.message));
+    }
+  });
+
   io.on('connection', (socket) => {
-    log.debug(`klien terhubung: ${socket.id}`);
+    const { username, exp } = socket.data.user;
+    log.debug(`klien terhubung: ${socket.id} (${username})`);
+
+    // Putuskan koneksi tepat saat token kedaluwarsa; klien harus login ulang.
+    // Dibatasi MAX_TIMEOUT_MS karena setTimeout meluap di atas ~24,8 hari.
+    const expiryTimer = setTimeout(
+      () => socket.disconnect(true),
+      Math.min(Math.max(exp * 1000 - Date.now(), 0), MAX_TIMEOUT_MS),
+    );
+    socket.on('disconnect', () => clearTimeout(expiryTimer));
 
     socket.on('subscribe:pond', (pondId) => {
       if (typeof pondId !== 'string' || !pondId) return;

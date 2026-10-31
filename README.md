@@ -73,6 +73,7 @@ tanpa polling.
 - 🗄 **Time-series di PostgreSQL** — plus agregasi per jam/hari untuk grafik rentang panjang
 - 🔌 **Auto-registrasi** — kolam & device terbentuk sendiri saat telemetri pertama masuk
 - 💾 **Buffer offline di firmware** — data tidak hilang saat koneksi terputus
+- 🔐 **Aman secara default** — login JWT dengan peran admin/viewer, rate limit, broker MQTT berpassword + ACL per device
 - 🧪 **Simulator device** — bisa dicoba penuh tanpa hardware sama sekali
 - 🐳 **Docker Compose** — seluruh stack jalan dengan satu perintah
 - ✅ **CI otomatis** — test backend, build frontend, kompilasi firmware
@@ -125,19 +126,30 @@ tanpa polling.
 git clone https://github.com/glacie21/smartfishpond.git
 cd smartfishpond
 
-cp .env.example .env
+cp .env.example .env                                         # isi password MQTT & JWT_SECRET
+cp docker/mosquitto/credentials.example docker/mosquitto/credentials   # akun MQTT per device
 docker compose up -d postgres mosquitto
 
 npm install            # memasang dependensi backend + frontend sekaligus
 ```
 
+> [!NOTE]
+> Broker MQTT **menolak koneksi anonim**. Akun backend dan simulator dibuat dari
+> `MQTT_BACKEND_PASSWORD` / `MQTT_SIMULATOR_PASSWORD` di `.env`, sedangkan akun
+> tiap ESP32 dari `docker/mosquitto/credentials`. Detailnya di
+> [docs/mqtt-topics.md](docs/mqtt-topics.md#keamanan).
+
 ### 2️⃣ Backend
 
 ```bash
-cp backend/.env.example backend/.env
+cp backend/.env.example backend/.env   # MQTT_PASSWORD = MQTT_BACKEND_PASSWORD di .env root
 npm run migrate        # membuat tabel
+npm run user:create -- admin --role admin   # akun login dashboard (password ditanyakan)
 npm run dev:backend    # http://localhost:4000
 ```
+
+Peran akun: `admin` boleh menambah/mengubah/menghapus kolam, `viewer` hanya
+melihat dashboard. Perintah yang sama dipakai untuk mengganti password.
 
 ### 3️⃣ Frontend
 
@@ -153,7 +165,8 @@ npm run seed           # riwayat 7 hari untuk 2 kolam contoh
 npm run simulate       # node virtual yang terus mengirim telemetri
 ```
 
-Buka `http://localhost:5173` — grafik langsung terisi dan terus bergerak.
+Buka `http://localhost:5173`, login dengan akun dari langkah 2 — grafik langsung
+terisi dan terus bergerak.
 
 <details>
 <summary><b>🔧 5️⃣ Flash firmware ke ESP32</b></summary>
@@ -162,7 +175,7 @@ Buka `http://localhost:5173` — grafik langsung terisi dan terus bergerak.
 
 ```bash
 cd firmware
-cp include/secrets.example.h include/secrets.h   # isi SSID, password, broker
+cp include/secrets.example.h include/secrets.h   # isi WiFi, broker, password MQTT device
 pio run -t upload
 pio device monitor
 ```
@@ -180,7 +193,11 @@ pio device monitor
 
 ```bash
 docker compose --profile full up -d --build
+docker compose exec backend node src/cli/createUser.js admin --role admin
 ```
+
+Mode ini berjalan dengan `NODE_ENV=production`, sehingga `JWT_SECRET` di `.env`
+wajib diisi (minimal 32 karakter). Tanpa itu, backend menolak start.
 
 | Layanan | Alamat |
 | --- | --- |
@@ -199,6 +216,7 @@ docker compose --profile full up -d --build
 | `npm run dev:frontend` | Dashboard mode development |
 | `npm run build` | Build produksi frontend |
 | `npm run migrate` | Jalankan migrasi database |
+| `npm run user:create -- <username> --role admin\|viewer` | Buat akun dashboard / ganti password |
 | `npm run seed` | Isi data contoh 7 hari |
 | `npm run simulate` | Jalankan device virtual |
 | `npm test` | Test backend |

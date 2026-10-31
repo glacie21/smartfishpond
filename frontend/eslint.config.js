@@ -13,6 +13,7 @@ export default [
         URL: 'readonly',
          document: 'readonly',
          window: 'readonly',
+        localStorage: 'readonly',
       },
     },
     rules: {

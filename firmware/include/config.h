@@ -5,6 +5,11 @@
 
 #include "secrets.h"
 
+// secrets.h lama (sebelum dukungan TLS) tetap bisa dikompilasi.
+#ifndef MQTT_USE_TLS
+#define MQTT_USE_TLS 0
+#endif
+
 // ------------------------------------------------------------
 //  Pin map (ESP32 DevKit v1)
 // ------------------------------------------------------------

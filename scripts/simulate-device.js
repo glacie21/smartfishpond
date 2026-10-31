@@ -11,7 +11,11 @@
  *   node scripts/simulate-device.js
  *   node scripts/simulate-device.js --ponds 3 --interval 5000
  *   MQTT_URL=mqtt://broker.lokal:1883 node scripts/simulate-device.js
+ *
+ * Login ke broker sebagai `fishpond-simulator`; password dibaca dari
+ * MQTT_SIMULATOR_PASSWORD di .env root (sama dengan yang dipakai broker).
  */
+import 'dotenv/config';
 import mqtt from 'mqtt';
 
 // ---------- Argumen CLI ----------
@@ -21,6 +25,16 @@ function arg(name, fallback) {
 }
 
 const MQTT_URL = process.env.MQTT_URL ?? 'mqtt://localhost:1883';
+const MQTT_USERNAME = process.env.MQTT_SIMULATOR_USERNAME ?? 'fishpond-simulator';
+const MQTT_PASSWORD = process.env.MQTT_SIMULATOR_PASSWORD;
+
+if (!MQTT_PASSWORD) {
+  console.error(
+    'MQTT_SIMULATOR_PASSWORD belum diisi. Isi di .env root (lihat .env.example), ' +
+      'lalu restart broker: docker compose restart mosquitto',
+  );
+  process.exit(1);
+}
 const POND_COUNT = Number(arg('ponds', 2));
 const INTERVAL_MS = Number(arg('interval', 5000));
 const ANOMALY_CHANCE = Number(arg('anomaly', 0.05)); // peluang lonjakan per paket
@@ -85,7 +99,11 @@ function nextReading(node) {
 
 // ---------- Jalankan ----------
 const nodes = Array.from({ length: POND_COUNT }, (_, i) => createNode(i));
-const client = mqtt.connect(MQTT_URL, { clientId: `fishpond-simulator-${process.pid}` });
+const client = mqtt.connect(MQTT_URL, {
+  clientId: `fishpond-simulator-${process.pid}`,
+  username: MQTT_USERNAME,
+  password: MQTT_PASSWORD,
+});
 
 client.on('connect', () => {
   console.log(`Terhubung ke ${MQTT_URL}`);

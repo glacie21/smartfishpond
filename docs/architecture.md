@@ -129,7 +129,8 @@ Struktur repo sudah menyiapkan tempat untuk penambahan berikut:
   dan endpoint `POST /api/devices/:id/command` di backend.
 - **Notifikasi** — rule engine ambang batas di `services/`, pengirim
   Telegram/WhatsApp di `services/notification/`.
-- **Autentikasi** — middleware JWT di `middleware/auth.js`, tabel `users`
-  dan relasi kepemilikan kolam.
+- **Kepemilikan kolam** — login JWT dan peran admin/viewer sudah ada
+  (`middleware/auth.js`, tabel `users`); langkah berikutnya relasi user ↔ kolam
+  agar tiap pengguna hanya melihat kolamnya sendiri.
 - **Skala besar** — ganti PostgreSQL biasa dengan TimescaleDB (hypertable pada
   `readings`) bila jumlah node bertambah banyak.

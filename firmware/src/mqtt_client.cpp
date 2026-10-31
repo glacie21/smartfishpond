@@ -7,10 +7,18 @@
 #include "telemetry.h"
 #include "wifi_manager.h"
 
+#if MQTT_USE_TLS
+#include <WiFiClientSecure.h>
+#endif
+
 namespace {
 
-WiFiClient wifiClient;
-PubSubClient client(wifiClient);
+#if MQTT_USE_TLS
+WiFiClientSecure netClient;
+#else
+WiFiClient netClient;
+#endif
+PubSubClient client(netClient);
 unsigned long lastAttemptMs = 0;
 
 char statusTopic[96];
@@ -45,7 +53,13 @@ bool connect() {
     Telemetry::publishStatus(true);
     Telemetry::flushBuffer();
   } else {
-    Serial.printf("[mqtt] gagal, rc=%d\n", client.state());
+    const int rc = client.state();
+    Serial.printf("[mqtt] gagal, rc=%d\n", rc);
+    if (rc == MQTT_CONNECT_BAD_CREDENTIALS || rc == MQTT_CONNECT_UNAUTHORIZED) {
+      Serial.println(
+          "[mqtt] ditolak broker: periksa MQTT_USERNAME (= DEVICE_ID) dan "
+          "MQTT_PASSWORD di secrets.h vs docker/mosquitto/credentials");
+    }
   }
   return ok;
 }
@@ -56,6 +70,10 @@ namespace MqttClient {
 
 void begin() {
   buildTopic(statusTopic, sizeof(statusTopic), "status");
+#if MQTT_USE_TLS
+  // Verifikasi sertifikat broker terhadap CA; tanpa ini TLS rentan MITM.
+  netClient.setCACert(MQTT_CA_CERT);
+#endif
   client.setServer(MQTT_HOST, MQTT_PORT);
   client.setCallback(onMessage);
   client.setBufferSize(MQTT_BUFFER_SIZE);

@@ -10,3 +10,6 @@ export class HttpError extends Error {
 
 export const notFound = (message = 'Data tidak ditemukan') => new HttpError(404, message);
 export const badRequest = (message, details) => new HttpError(400, message, details);
+export const unauthorized = (message = 'Silakan login terlebih dahulu') => new HttpError(401, message);
+export const forbidden = (message = 'Anda tidak memiliki akses untuk aksi ini') =>
+  new HttpError(403, message);
