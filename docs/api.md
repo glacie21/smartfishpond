@@ -98,7 +98,15 @@ Seluruh `/api` dibatasi `RATE_LIMIT_MAX` request (default 600) per IP per
 }
 ```
 
-Mengembalikan `503` bila database tidak terjangkau.
+Mengembalikan `503` bila database tidak terjangkau. Dipakai juga sebagai
+`HEALTHCHECK` container backend.
+
+### `GET /metrics` (di luar `/api`)
+
+Metrik format Prometheus. Aktif hanya bila `METRICS_TOKEN` diisi; wajib header
+`Authorization: Bearer <METRICS_TOKEN>` (bukan token login). Di produksi, Caddy
+memblokir path ini dari internet. Daftar metrik ada di
+[operations.md → Monitoring](operations.md#monitoring).
 
 ---
 

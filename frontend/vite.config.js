@@ -15,4 +15,10 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: true,
   },
+  // Vitest: komponen diuji di DOM simulasi (jsdom).
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['src/test/setup.js'],
+    css: false,
+  },
 });

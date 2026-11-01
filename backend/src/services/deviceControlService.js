@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { config } from '../config/index.js';
 import { publishJson } from '../mqtt/client.js';
+import { commandsTotal } from '../observability/metrics.js';
 import { buildTopic } from '../mqtt/topics.js';
 import { broadcast } from '../realtime/socket.js';
 import * as commandRepository from '../repositories/commandRepository.js';
@@ -58,6 +59,7 @@ export async function sendCommand(deviceId, { actuator, state, durationS }, requ
     await publishJson(topic, { id: command.id, actuator, state, durationS: durationS ?? null });
   } catch (err) {
     await commandRepository.markFailed(command.id, err.message);
+    commandsTotal.inc({ status: 'failed' });
     throw new HttpError(503, `Perintah gagal dikirim: ${err.message}`);
   }
 
@@ -65,6 +67,7 @@ export async function sendCommand(deviceId, { actuator, state, durationS }, requ
     `${requestedBy} -> ${deviceId}: ${actuator} ${state ? 'ON' : 'OFF'}` +
       (durationS ? ` selama ${durationS} detik` : ''),
   );
+  commandsTotal.inc({ status: 'sent' });
   broadcast('command:updated', command, { pondId: device.pond_id, deviceId });
   return command;
 }
@@ -106,6 +109,7 @@ export async function ingestCommandAck(raw, { deviceId, pondId }) {
     log.warn(`ack untuk perintah ${parsed.data.id} dari ${deviceId} tidak cocok/kedaluwarsa`);
     return null;
   }
+  commandsTotal.inc({ status: command.status });
   if (command.status === 'failed') log.warn(`${deviceId} gagal menjalankan perintah: ${command.error}`);
 
   broadcast('command:updated', command, { pondId, deviceId });
@@ -117,6 +121,7 @@ export async function expirePendingCommands() {
   const expired = await commandRepository.expirePending(config.commands.ackTimeoutSeconds);
   for (const command of expired) {
     log.warn(`perintah ${command.id} ke ${command.device_id} tidak dibalas (timeout)`);
+    commandsTotal.inc({ status: 'timeout' });
     broadcast('command:updated', command, { pondId: command.pond_id, deviceId: command.device_id });
   }
 }

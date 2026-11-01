@@ -5,9 +5,14 @@ on:
     branches: [main]
   pull_request:
 
+# Push baru ke PR yang sama membatalkan run lama.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   backend:
-    name: Backend (test)
+    name: Backend (lint + unit test)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,10 +21,39 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      - run: npm run lint --workspace backend
       - run: npm test --workspace backend
 
+  backend-integration:
+    name: Backend (integration, PostgreSQL)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: fishpond
+          POSTGRES_PASSWORD: fishpond
+          POSTGRES_DB: smartfishpond_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fishpond"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgres://fishpond:fishpond@localhost:5432/smartfishpond_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run test:integration --workspace backend
+
   frontend:
-    name: Frontend (build)
+    name: Frontend (lint + test + build)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,20 +62,40 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      - run: npm run lint --workspace frontend
+      - run: npm test --workspace frontend
       - run: npm run build --workspace frontend
 
   firmware:
-    name: Firmware (compile)
+    name: Firmware (unit test + compile)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - uses: actions/cache@v4
+        with:
+          path: ~/.platformio
+          key: pio-${{ runner.os }}-${{ hashFiles('firmware/platformio.ini') }}
       - name: Install PlatformIO
         run: pip install --upgrade platformio
+      - name: Unit test (host)
+        run: pio test -d firmware -e native
       - name: Siapkan secrets.h
         # secrets.h tidak masuk repo; contohnya cukup untuk uji kompilasi.
         run: cp firmware/include/secrets.example.h firmware/include/secrets.h
       - name: Compile
         run: pio run -d firmware -e esp32dev
+
+  compose:
+    name: Docker Compose (validasi konfigurasi)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dev stack
+        run: docker compose --env-file .env.example config --quiet
+      - name: Production stack
+        env:
+          DOMAIN: ci.example.com
+        run: docker compose --env-file .env.example -f docker-compose.yml -f docker-compose.prod.yml --profile full config --quiet

@@ -1,6 +1,7 @@
 #include "actuators.h"
 
 #include <ArduinoJson.h>
+#include <PondMath.h>
 
 #include "config.h"
 #include "mqtt_client.h"
@@ -73,8 +74,9 @@ void begin() {
 
 void loop() {
   for (auto& a : actuators) {
-    // Selisih unsigned tetap benar saat millis() melimpah (~49 hari).
-    if (a.state && a.durationMs && millis() - a.onSinceMs >= a.durationMs) {
+    // elapsedAtLeast tetap benar saat millis() melimpah (~49 hari); diuji di host.
+    if (a.state && a.durationMs &&
+        PondMath::elapsedAtLeast(millis(), a.onSinceMs, a.durationMs)) {
       apply(a, false, 0);
       publishState();
     }

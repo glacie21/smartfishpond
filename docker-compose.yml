@@ -67,6 +67,7 @@ services:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_CHAT_IDS: ${TELEGRAM_CHAT_IDS:-}
       NOTIFY_MIN_SEVERITY: ${NOTIFY_MIN_SEVERITY:-warning}
+      METRICS_TOKEN: ${METRICS_TOKEN:-}
       CORS_ORIGIN: http://localhost:${FRONTEND_PORT:-5173}
     ports:
       - "${BACKEND_PORT:-4000}:4000"
@@ -83,7 +84,8 @@ services:
     profiles: ["full"]
     restart: unless-stopped
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     ports:
       - "${FRONTEND_PORT:-5173}:80"
 

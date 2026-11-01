@@ -113,6 +113,11 @@ export const config = {
     minSeverity: process.env.NOTIFY_MIN_SEVERITY === 'critical' ? 'critical' : 'warning',
   },
 
+  metrics: {
+    // Kosong = GET /metrics nonaktif. Prometheus mengirim: Authorization: Bearer <token>
+    token: process.env.METRICS_TOKEN || undefined,
+  },
+
   commands: {
     // Perintah tanpa ack dari device setelah sekian detik ditandai timeout.
     ackTimeoutSeconds: int('COMMAND_ACK_TIMEOUT_SECONDS', 30),

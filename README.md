@@ -18,7 +18,8 @@ ke dashboard React secara realtime.
 [Arsitektur](docs/architecture.md) ·
 [Hardware](docs/hardware.md) ·
 [Topik MQTT](docs/mqtt-topics.md) ·
-[REST API](docs/api.md)
+[REST API](docs/api.md) ·
+[Operasional](docs/operations.md)
 
 </div>
 
@@ -79,7 +80,8 @@ tanpa polling.
 - 🔐 **Aman secara default** — login JWT dengan peran admin/viewer, rate limit, broker MQTT berpassword + ACL per device
 - 🧪 **Simulator device** — bisa dicoba penuh tanpa hardware sama sekali
 - 🐳 **Docker Compose** — seluruh stack jalan dengan satu perintah
-- ✅ **CI otomatis** — test backend, build frontend, kompilasi firmware
+- 🚀 **Siap produksi** — HTTPS otomatis (Caddy), backup database terjadwal, metrik Prometheus
+- ✅ **CI otomatis** — lint, test backend (unit + integrasi PostgreSQL), test frontend, test & kompilasi firmware
 
 ---
 
@@ -206,8 +208,11 @@ wajib diisi (minimal 32 karakter). Tanpa itu, backend menolak start.
 | --- | --- |
 | Dashboard | `http://localhost:5173` |
 | REST API | `http://localhost:4000/api` |
-| Health check | `http://localhost:4000/health` |
+| Health check | `http://localhost:4000/api/health` |
 | MQTT broker | `mqtt://localhost:1883` (WebSocket `9001`) |
+
+Untuk server sungguhan (domain + HTTPS, backup otomatis, monitoring), pakai
+`docker-compose.prod.yml` — langkahnya di [docs/operations.md](docs/operations.md).
 
 </details>
 
@@ -222,7 +227,10 @@ wajib diisi (minimal 32 karakter). Tanpa itu, backend menolak start.
 | `npm run user:create -- <username> --role admin\|viewer` | Buat akun dashboard / ganti password |
 | `npm run seed` | Isi data contoh 7 hari |
 | `npm run simulate` | Jalankan device virtual |
-| `npm test` | Test backend |
+| `npm run lint` | ESLint backend + frontend |
+| `npm test` | Unit test backend + frontend |
+| `npm run test:integration` | Test integrasi backend (butuh `TEST_DATABASE_URL`, database dikosongkan) |
+| `npm run backup` / `npm run restore -- <file>` | Backup / pulihkan database |
 
 ---
 
@@ -237,7 +245,9 @@ wajib diisi (minimal 32 karakter). Tanpa itu, backend menolak start.
 smartfishpond_IoT/
 ├── firmware/          # Firmware ESP32 (PlatformIO, C++/Arduino)
 │   ├── include/       # Header: konfigurasi, deklarasi modul
-│   ├── src/           # Implementasi: main loop, sensor, wifi, mqtt
+│   ├── src/           # Implementasi: main loop, sensor, wifi, mqtt, aktuator, OTA
+│   ├── lib/PondMath/  # Rumus sensor murni (diuji di host)
+│   ├── test/          # Unit test Unity (pio test -e native)
 │   └── platformio.ini
 ├── backend/           # REST API + MQTT ingest (Node.js, Express)
 │   ├── src/
@@ -249,19 +259,24 @@ smartfishpond_IoT/
 │   │   ├── controllers/   # Handler HTTP
 │   │   ├── routes/        # Definisi endpoint
 │   │   ├── realtime/      # Socket.IO broadcast
-│   │   └── middleware/    # Error handler, validasi, logging
-│   └── tests/
+│   │   ├── middleware/    # Auth, rate limit, error handler, validasi, logging
+│   │   ├── observability/ # Metrik Prometheus
+│   │   └── cli/           # Perintah admin (buat user)
+│   └── tests/             # Unit test + integration/ (PostgreSQL)
 ├── frontend/          # Dashboard web (React + Vite)
 │   └── src/
 │       ├── api/           # HTTP client
 │       ├── components/    # Komponen UI
-│       ├── hooks/         # Custom hooks (polling & realtime)
-│       └── pages/         # Halaman
+│       ├── context/       # Sesi login
+│       ├── hooks/         # Custom hooks (data, realtime, alert)
+│       └── pages/         # Halaman (+ test *.test.jsx di samping file)
 ├── docs/              # Dokumentasi arsitektur, hardware, API, topik MQTT
-├── scripts/           # Utilitas: simulator device & seed data
-├── docker/            # Konfigurasi Mosquitto
-├── .github/workflows/ # CI: test backend, build frontend, kompilasi firmware
+├── scripts/           # Simulator device, seed data, backup & restore
+├── docker/            # Konfigurasi Mosquitto (ACL, entrypoint kredensial)
+├── deploy/            # Caddyfile & skrip backup untuk produksi
+├── .github/workflows/ # CI: lint, test, kompilasi firmware, validasi compose
 ├── docker-compose.yml # PostgreSQL + Mosquitto + backend + frontend
+├── docker-compose.prod.yml # Override produksi: Caddy, backup, port internal
 └── package.json       # npm workspaces (backend + frontend)
 ```
 
@@ -277,6 +292,9 @@ smartfishpond_IoT/
 | [🔌 Wiring & hardware](docs/hardware.md) | Daftar komponen, pinout, kalibrasi sensor |
 | [📡 Topik & payload MQTT](docs/mqtt-topics.md) | Format topik, skema telemetri & status |
 | [🌐 Referensi REST API](docs/api.md) | Endpoint, query param, event Socket.IO |
+| [🚀 Operasional](docs/operations.md) | Deploy produksi, backup & restore, monitoring, rotasi kredensial |
+| [🤝 Berkontribusi](CONTRIBUTING.md) | Alur kerja, pemeriksaan sebelum PR, konvensi kode |
+| [📝 Changelog](CHANGELOG.md) | Riwayat perubahan & langkah migrasi |
 
 ---
 

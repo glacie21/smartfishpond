@@ -1,4 +1,5 @@
 import { config } from '../config/index.js';
+import { notificationsTotal } from '../observability/metrics.js';
 import { createLogger } from '../utils/logger.js';
 import { severityRank } from './metrics.js';
 
@@ -40,9 +41,13 @@ async function sendTelegram(text) {
         if (!response.ok) {
           const body = await response.text();
           log.error(`Telegram menolak pesan ke ${chatId}: ${response.status} ${body.slice(0, 200)}`);
+          notificationsTotal.inc({ channel: 'telegram', result: 'failed' });
+          return;
         }
+        notificationsTotal.inc({ channel: 'telegram', result: 'sent' });
       } catch (err) {
         log.error(`gagal mengirim Telegram ke ${chatId}: ${err.message}`);
+        notificationsTotal.inc({ channel: 'telegram', result: 'failed' });
       }
     }),
   );
