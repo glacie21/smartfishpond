@@ -27,6 +27,8 @@ firmware/.pio/
 *.db
 data/
 pgdata/
+backups/
+*.dump
 
 # ---- Editor & OS ----
 .vscode/*

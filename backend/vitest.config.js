@@ -2,6 +2,8 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
+    // Test integrasi butuh Postgres sungguhan: npm run test:integration.
+    exclude: ['node_modules/**', 'tests/integration/**'],
     // Config backend membaca env saat di-import; test tidak menyentuh DB sungguhan.
     env: {
       NODE_ENV: 'test',
@@ -10,6 +12,7 @@ export default defineConfig({
       JWT_SECRET: 'test-secret-yang-cukup-panjang-untuk-hs256-0123456789',
       BCRYPT_ROUNDS: '4',
       LOGIN_RATE_LIMIT_MAX: '3',
+      METRICS_TOKEN: 'test-metrics-token',
     },
   },
 });

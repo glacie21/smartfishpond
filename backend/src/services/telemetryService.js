@@ -1,4 +1,5 @@
 import * as deviceRepository from '../repositories/deviceRepository.js';
+import { readingsIngestedTotal } from '../observability/metrics.js';
 import * as readingRepository from '../repositories/readingRepository.js';
 import { badRequest } from '../utils/errors.js';
 import { createLogger } from '../utils/logger.js';
@@ -68,6 +69,7 @@ export async function ingestTelemetry(raw) {
     uptimeS: uptime ?? null,
   });
 
+  readingsIngestedTotal.inc();
   broadcast('reading:new', reading, { pondId, deviceId });
 
   // Data sudah aman tersimpan; kegagalan alert tidak boleh membatalkannya.

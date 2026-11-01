@@ -1,0 +1,82 @@
+# ============================================================
+#  Smart Fish Pond IoT — override produksi
+#
+#      docker compose -f docker-compose.yml -f docker-compose.prod.yml \
+#        --profile full up -d --build
+#
+#  Perbedaan dari stack pengembangan:
+#    - Caddy di depan sebagai satu-satunya pintu HTTP(S), dengan sertifikat
+#      Let's Encrypt otomatis untuk ${DOMAIN}. Dashboard, /api, dan
+#      /socket.io tersaji dari satu domain (tanpa CORS).
+#    - PostgreSQL, backend, dan frontend tidak lagi dipublikasikan ke host.
+#    - Backup database harian otomatis ke ./backups.
+#  Panduan lengkap: docs/operations.md
+# ============================================================
+
+services:
+  postgres:
+    ports: !reset []
+
+  # Hanya MQTT untuk device; WebSocket 9001 tidak dipakai dashboard.
+  # Setelah TLS aktif (docs/mqtt-topics.md), ganti dengan "8883:8883".
+  mosquitto:
+    ports: !override
+      - "${MQTT_PORT:-1883}:1883"
+
+  backend:
+    ports: !reset []
+    environment:
+      CORS_ORIGIN: https://${DOMAIN:?isi DOMAIN di .env, mis. kolam.contoh.com}
+      # Satu proxy (Caddy) di depan: req.ip = IP klien asli untuk rate limit.
+      TRUST_PROXY: 1
+
+  frontend:
+    ports: !reset []
+    build:
+      args:
+        # Kosong = API & Socket.IO di origin yang sama (lewat Caddy).
+        VITE_API_BASE_URL: ""
+        VITE_SOCKET_URL: ""
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: fishpond-caddy
+    profiles: ["full"]
+    restart: unless-stopped
+    depends_on:
+      - backend
+      - frontend
+    environment:
+      DOMAIN: ${DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"   # HTTP/3
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+  db-backup:
+    image: postgres:16-alpine
+    container_name: fishpond-db-backup
+    profiles: ["full"]
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGUSER: ${POSTGRES_USER:-fishpond}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-fishpond}
+      PGDATABASE: ${POSTGRES_DB:-smartfishpond}
+      BACKUP_INTERVAL_HOURS: ${BACKUP_INTERVAL_HOURS:-24}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+    volumes:
+      - ./deploy/backup-loop.sh:/usr/local/bin/backup-loop.sh:ro
+      - ${BACKUP_DIR:-./backups}:/backups
+    entrypoint: ["sh", "/usr/local/bin/backup-loop.sh"]
+
+volumes:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,38 @@
+# ============================================================
+#  Reverse proxy produksi (dipakai docker-compose.prod.yml).
+#  Caddy mengurus sertifikat HTTPS Let's Encrypt untuk {$DOMAIN} secara
+#  otomatis — DNS domain harus sudah mengarah ke server dan port 80/443 terbuka.
+# ============================================================
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	# Metrik hanya untuk Prometheus di jaringan internal Docker (backend:4000),
+	# tidak dibuka ke internet.
+	handle /metrics* {
+		respond 404
+	}
+
+	handle /api/* {
+		reverse_proxy backend:4000
+	}
+
+	# Socket.IO (WebSocket + fallback polling) ke backend yang sama.
+	handle /socket.io/* {
+		reverse_proxy backend:4000
+	}
+
+	# Selain itu: aset dashboard dari nginx di container frontend.
+	handle {
+		reverse_proxy frontend:80
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+
+	log
+}

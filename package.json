@@ -16,7 +16,11 @@
     "user:create": "npm run user:create --workspace backend --",
     "seed": "node scripts/seed.js",
     "simulate": "node scripts/simulate-device.js",
-    "test": "npm test --workspace backend"
+    "lint": "npm run lint --workspaces",
+    "test": "npm test --workspaces",
+    "test:integration": "npm run test:integration --workspace backend",
+    "backup": "sh scripts/backup-db.sh",
+    "restore": "sh scripts/restore-db.sh"
   },
   "engines": {
     "node": ">=20"
