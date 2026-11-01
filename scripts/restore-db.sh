@@ -16,20 +16,21 @@ if [ -z "$FILE" ] || [ ! -f "$FILE" ]; then
   exit 1
 fi
 
-DB=$(docker compose exec -T postgres sh -c 'printf %s "$POSTGRES_DB"')
+# </dev/null: docker exec -T ikut membaca stdin dan bisa menelan jawaban konfirmasi.
+DB=$(docker compose exec -T postgres sh -c 'printf %s "$POSTGRES_DB"' </dev/null)
 echo "Database \"$DB\" akan DIGANTI dengan isi $FILE."
 printf 'Ketik nama database untuk melanjutkan: '
-read -r CONFIRM
+read -r CONFIRM || CONFIRM=""
 if [ "$CONFIRM" != "$DB" ]; then
   echo "Dibatalkan." >&2
   exit 1
 fi
 
 # Hentikan backend bila sedang berjalan (profil full); abaikan bila tidak ada.
-BACKEND_WAS_RUNNING=$(docker compose ps --status running --services 2>/dev/null | grep -x backend || true)
+BACKEND_WAS_RUNNING=$(docker compose ps --status running --services </dev/null 2>/dev/null | grep -x backend || true)
 if [ -n "$BACKEND_WAS_RUNNING" ]; then
   echo "Menghentikan backend..."
-  docker compose stop backend
+  docker compose stop backend </dev/null
 fi
 
 echo "Memulihkan..."
@@ -39,7 +40,7 @@ docker compose exec -T postgres sh -c \
 
 if [ -n "$BACKEND_WAS_RUNNING" ]; then
   echo "Menyalakan kembali backend..."
-  docker compose start backend
+  docker compose start backend </dev/null
 fi
 
 echo "Restore selesai."

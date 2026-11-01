@@ -1,271 +1,280 @@
 <!doctype html>
 <html lang="id">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- Identitas halaman -->
-    <title>Smart Fish Pond — Monitoring Kolam Realtime</title>
-    <meta name="description" content="Dashboard monitoring kualitas air kolam ikan: suhu, pH, oksigen terlarut, dan kekeruhan secara realtime." />
-    <meta name="application-name" content="Smart Fish Pond" />
-    <meta name="author" content="glacie21" />
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- Favicon: Ikon aquatic teal inline SVG -->
-    <link
-      rel="icon"
-      type="image/svg+xml"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%2322d3ee'/%3E%3Cstop offset='100%25' stop-color='%230891b2'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath fill='url(%23grad)' d='M16 2.5S5.5 13 5.5 19.5a10.5 10.5 0 0 0 21 0C26.5 13 16 2.5 16 2.5z'/%3E%3Cpath fill='%23ffffff' opacity='.85' d='M13 18.5a3.5 3.5 0 0 0 3.5 3.5 1 1 0 0 1 0 2 5.5 5.5 0 0 1-5.5-5.5 1 1 0 0 1 2 0z'/%3E%3C/svg%3E"
-    />
+  <!-- Identitas halaman -->
+  <title>Smart Fish Pond — Monitoring Kolam Realtime</title>
+  <meta name="description"
+    content="Dashboard monitoring kualitas air kolam ikan: suhu, pH, oksigen terlarut, dan kekeruhan secara realtime." />
+  <meta name="application-name" content="Smart Fish Pond" />
+  <meta name="author" content="glacie21" />
 
-    <!-- Warna browser theme mengikuti background dashboard -->
-    <meta name="color-scheme" content="light dark" />
-    <meta name="theme-color" content="#f0f5fa" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#060d1a" media="(prefers-color-scheme: dark)" />
+  <!-- Favicon: Ikon aquatic teal inline SVG -->
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%2322d3ee'/%3E%3Cstop offset='100%25' stop-color='%230891b2'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath fill='url(%23grad)' d='M16 2.5S5.5 13 5.5 19.5a10.5 10.5 0 0 0 21 0C26.5 13 16 2.5 16 2.5z'/%3E%3Cpath fill='%23ffffff' opacity='.85' d='M13 18.5a3.5 3.5 0 0 0 3.5 3.5 1 1 0 0 1 0 2 5.5 5.5 0 0 1-5.5-5.5 1 1 0 0 1 2 0z'/%3E%3C/svg%3E" />
 
-    <!-- Pratinjau saat ditautkan di chat/media sosial -->
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Smart Fish Pond" />
-    <meta property="og:title" content="Smart Fish Pond — Monitoring Kolam Realtime" />
-    <meta property="og:description" content="Pantau suhu, pH, oksigen terlarut, dan kekeruhan kolam ikan secara realtime dengan presisi tinggi." />
-    <meta property="og:locale" content="id_ID" />
-    <meta name="twitter:card" content="summary" />
+  <!-- Manifest PWA: dashboard bisa dipasang di layar utama ponsel -->
+  <link rel="manifest" href="/manifest.webmanifest" />
 
-    <!-- Font: Inter & DM Sans -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap"
-    />
+  <!-- Warna browser theme mengikuti background dashboard -->
+  <meta name="color-scheme" content="light dark" />
+  <meta name="theme-color" content="#f0f5fa" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#060d1a" media="(prefers-color-scheme: dark)" />
 
-    <!-- Gaya splash loader mandiri sebelum bundle React selesai dimuat -->
-    <style>
+  <!-- Pratinjau saat ditautkan di chat/media sosial -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Smart Fish Pond" />
+  <meta property="og:title" content="Smart Fish Pond — Monitoring Kolam Realtime" />
+  <meta property="og:description"
+    content="Pantau suhu, pH, oksigen terlarut, dan kekeruhan kolam ikan secara realtime dengan presisi tinggi." />
+  <meta property="og:locale" content="id_ID" />
+  <meta name="twitter:card" content="summary" />
+
+  <!-- Font: Inter & DM Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" />
+
+  <!-- Gaya splash loader mandiri sebelum bundle React selesai dimuat -->
+  <style>
+    :root {
+      color-scheme: light dark;
+      --splash-bg: #060d1a;
+      --splash-bg-glow: radial-gradient(circle at 50% 45%, rgba(34, 211, 238, 0.08) 0%, transparent 65%), #060d1a;
+      --splash-card-bg: rgba(15, 25, 45, 0.65);
+      --splash-card-border: rgba(56, 97, 150, 0.25);
+      --splash-card-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.5), 0 0 24px rgba(34, 211, 238, 0.06);
+      --splash-title: #f1f5f9;
+      --splash-sub: #7d93b2;
+      --splash-accent: #22d3ee;
+      --splash-track: rgba(56, 97, 150, 0.25);
+      --splash-icon-bg: linear-gradient(135deg, rgba(34, 211, 238, 0.16), rgba(8, 145, 178, 0.08));
+    }
+
+    @media (prefers-color-scheme: light) {
       :root {
-        color-scheme: light dark;
-        --splash-bg: #060d1a;
-        --splash-bg-glow: radial-gradient(circle at 50% 45%, rgba(34, 211, 238, 0.08) 0%, transparent 65%), #060d1a;
-        --splash-card-bg: rgba(15, 25, 45, 0.65);
-        --splash-card-border: rgba(56, 97, 150, 0.25);
-        --splash-card-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.5), 0 0 24px rgba(34, 211, 238, 0.06);
-        --splash-title: #f1f5f9;
-        --splash-sub: #7d93b2;
-        --splash-accent: #22d3ee;
-        --splash-track: rgba(56, 97, 150, 0.25);
-        --splash-icon-bg: linear-gradient(135deg, rgba(34, 211, 238, 0.16), rgba(8, 145, 178, 0.08));
+        --splash-bg: #f0f5fa;
+        --splash-bg-glow: radial-gradient(circle at 50% 45%, rgba(8, 145, 178, 0.08) 0%, transparent 65%), #f0f5fa;
+        --splash-card-bg: rgba(255, 255, 255, 0.85);
+        --splash-card-border: rgba(203, 213, 225, 0.6);
+        --splash-card-shadow: 0 16px 36px -10px rgba(15, 23, 42, 0.08), 0 0 20px rgba(8, 145, 178, 0.05);
+        --splash-title: #0f172a;
+        --splash-sub: #64748b;
+        --splash-accent: #0891b2;
+        --splash-track: rgba(203, 213, 225, 0.8);
+        --splash-icon-bg: linear-gradient(135deg, rgba(8, 145, 178, 0.12), rgba(6, 182, 212, 0.05));
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--splash-bg);
+      background: var(--splash-bg-glow);
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      min-height: 100vh;
+    }
+
+    .splash-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      min-height: 100dvh;
+      padding: 24px;
+    }
+
+    .splash-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 36px 32px 30px;
+      background: var(--splash-card-bg);
+      border: 1px solid var(--splash-card-border);
+      border-radius: 24px;
+      box-shadow: var(--splash-card-shadow);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      text-align: center;
+      max-width: 340px;
+      width: 100%;
+      animation: splash-appear 0.4s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    }
+
+    .splash-brand-icon {
+      width: 58px;
+      height: 58px;
+      border-radius: 18px;
+      background: var(--splash-icon-bg);
+      border: 1px solid rgba(34, 211, 238, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--splash-accent);
+      margin-bottom: 18px;
+      box-shadow: 0 0 24px -2px rgba(34, 211, 238, 0.2);
+      animation: splash-pulse 2.4s ease-in-out infinite alternate;
+    }
+
+    .splash-title {
+      margin: 0 0 6px;
+      font-size: 19px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--splash-title);
+    }
+
+    .splash-subtitle {
+      margin: 0 0 24px;
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--splash-sub);
+      line-height: 1.4;
+    }
+
+    /* Bar progress modern indeterminate */
+    .splash-progress-track {
+      width: 160px;
+      height: 4px;
+      background: var(--splash-track);
+      border-radius: 999px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .splash-progress-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 50%;
+      background: linear-gradient(90deg, transparent, var(--splash-accent), transparent);
+      border-radius: 999px;
+      animation: splash-glide 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+
+    .splash-status {
+      margin: 14px 0 0;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--splash-sub);
+      letter-spacing: 0.01em;
+    }
+
+    @keyframes splash-appear {
+      from {
+        opacity: 0;
+        transform: scale(0.96) translateY(8px);
       }
 
-      @media (prefers-color-scheme: light) {
-        :root {
-          --splash-bg: #f0f5fa;
-          --splash-bg-glow: radial-gradient(circle at 50% 45%, rgba(8, 145, 178, 0.08) 0%, transparent 65%), #f0f5fa;
-          --splash-card-bg: rgba(255, 255, 255, 0.85);
-          --splash-card-border: rgba(203, 213, 225, 0.6);
-          --splash-card-shadow: 0 16px 36px -10px rgba(15, 23, 42, 0.08), 0 0 20px rgba(8, 145, 178, 0.05);
-          --splash-title: #0f172a;
-          --splash-sub: #64748b;
-          --splash-accent: #0891b2;
-          --splash-track: rgba(203, 213, 225, 0.8);
-          --splash-icon-bg: linear-gradient(135deg, rgba(8, 145, 178, 0.12), rgba(6, 182, 212, 0.05));
-        }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    @keyframes splash-pulse {
+      0% {
+        transform: scale(1);
+        box-shadow: 0 0 16px -2px rgba(34, 211, 238, 0.15);
       }
 
-      * {
-        box-sizing: border-box;
+      100% {
+        transform: scale(1.05);
+        box-shadow: 0 0 28px 2px rgba(34, 211, 238, 0.35);
+      }
+    }
+
+    @keyframes splash-glide {
+      0% {
+        transform: translateX(-100%);
       }
 
-      html,
-      body {
-        margin: 0;
-        padding: 0;
-        background: var(--splash-bg);
-        background: var(--splash-bg-glow);
-        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-        min-height: 100vh;
+      100% {
+        transform: translateX(320%);
       }
+    }
 
-      .splash-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        min-height: 100vh;
-        min-height: 100dvh;
-        padding: 24px;
-      }
+    @media (prefers-reduced-motion: reduce) {
 
-      .splash-card {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding: 36px 32px 30px;
-        background: var(--splash-card-bg);
-        border: 1px solid var(--splash-card-border);
-        border-radius: 24px;
-        box-shadow: var(--splash-card-shadow);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
-        text-align: center;
-        max-width: 340px;
-        width: 100%;
-        animation: splash-appear 0.4s cubic-bezier(0.16, 1, 0.3, 1) backwards;
-      }
-
-      .splash-brand-icon {
-        width: 58px;
-        height: 58px;
-        border-radius: 18px;
-        background: var(--splash-icon-bg);
-        border: 1px solid rgba(34, 211, 238, 0.25);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--splash-accent);
-        margin-bottom: 18px;
-        box-shadow: 0 0 24px -2px rgba(34, 211, 238, 0.2);
-        animation: splash-pulse 2.4s ease-in-out infinite alternate;
-      }
-
-      .splash-title {
-        margin: 0 0 6px;
-        font-size: 19px;
-        font-weight: 700;
-        letter-spacing: -0.02em;
-        color: var(--splash-title);
-      }
-
-      .splash-subtitle {
-        margin: 0 0 24px;
-        font-size: 13px;
-        font-weight: 400;
-        color: var(--splash-sub);
-        line-height: 1.4;
-      }
-
-      /* Bar progress modern indeterminate */
-      .splash-progress-track {
-        width: 160px;
-        height: 4px;
-        background: var(--splash-track);
-        border-radius: 999px;
-        overflow: hidden;
-        position: relative;
-      }
-
+      .splash-card,
+      .splash-brand-icon,
       .splash-progress-bar {
-        position: absolute;
-        top: 0;
-        left: 0;
-        height: 100%;
-        width: 50%;
-        background: linear-gradient(90deg, transparent, var(--splash-accent), transparent);
-        border-radius: 999px;
-        animation: splash-glide 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        animation: none !important;
       }
+    }
 
-      .splash-status {
-        margin: 14px 0 0;
-        font-size: 12px;
-        font-weight: 500;
-        color: var(--splash-sub);
-        letter-spacing: 0.01em;
-      }
+    /* Tampilan jika JavaScript nonaktif */
+    .app-noscript-card {
+      max-width: 420px;
+      margin: 12vh auto 0;
+      padding: 32px 28px;
+      background: var(--splash-card-bg);
+      border: 1px solid rgba(248, 113, 113, 0.3);
+      border-radius: 20px;
+      text-align: center;
+      color: var(--splash-title);
+      box-shadow: var(--splash-card-shadow);
+    }
 
-      @keyframes splash-appear {
-        from {
-          opacity: 0;
-          transform: scale(0.96) translateY(8px);
-        }
-        to {
-          opacity: 1;
-          transform: scale(1) translateY(0);
-        }
-      }
+    .app-noscript-card h1 {
+      font-size: 18px;
+      margin: 0 0 10px;
+      color: #f87171;
+    }
 
-      @keyframes splash-pulse {
-        0% {
-          transform: scale(1);
-          box-shadow: 0 0 16px -2px rgba(34, 211, 238, 0.15);
-        }
-        100% {
-          transform: scale(1.05);
-          box-shadow: 0 0 28px 2px rgba(34, 211, 238, 0.35);
-        }
-      }
+    .app-noscript-card p {
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--splash-sub);
+      margin: 0;
+    }
+  </style>
+</head>
 
-      @keyframes splash-glide {
-        0% {
-          transform: translateX(-100%);
-        }
-        100% {
-          transform: translateX(320%);
-        }
-      }
+<body>
+  <noscript>
+    <div class="app-noscript-card">
+      <h1>JavaScript Dinonaktifkan</h1>
+      <p>Dashboard Smart Fish Pond memerlukan JavaScript agar dapat menampilkan telemetri sensor secara realtime.
+        Silakan aktifkan JavaScript pada browser Anda dan muat ulang halaman.</p>
+    </div>
+  </noscript>
 
-      @media (prefers-reduced-motion: reduce) {
-        .splash-card,
-        .splash-brand-icon,
-        .splash-progress-bar {
-          animation: none !important;
-        }
-      }
-
-      /* Tampilan jika JavaScript nonaktif */
-      .app-noscript-card {
-        max-width: 420px;
-        margin: 12vh auto 0;
-        padding: 32px 28px;
-        background: var(--splash-card-bg);
-        border: 1px solid rgba(248, 113, 113, 0.3);
-        border-radius: 20px;
-        text-align: center;
-        color: var(--splash-title);
-        box-shadow: var(--splash-card-shadow);
-      }
-
-      .app-noscript-card h1 {
-        font-size: 18px;
-        margin: 0 0 10px;
-        color: #f87171;
-      }
-
-      .app-noscript-card p {
-        font-size: 14px;
-        line-height: 1.6;
-        color: var(--splash-sub);
-        margin: 0;
-      }
-    </style>
-  </head>
-  <body>
-    <noscript>
-      <div class="app-noscript-card">
-        <h1>JavaScript Dinonaktifkan</h1>
-        <p>Dashboard Smart Fish Pond memerlukan JavaScript agar dapat menampilkan telemetri sensor secara realtime. Silakan aktifkan JavaScript pada browser Anda dan muat ulang halaman.</p>
-      </div>
-    </noscript>
-
-    <!-- Placeholder root: otomatis digantikan saat React selesai di-render -->
-    <div id="root">
-      <div class="splash-container" role="status" aria-live="polite">
-        <div class="splash-card">
-          <div class="splash-brand-icon" aria-hidden="true">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 2.5S5.5 10 5.5 14.5a6.5 6.5 0 0 0 13 0C18.5 10 12 2.5 12 2.5z" />
-              <path d="M10 16a2.5 2.5 0 0 0 2.5 2.5" opacity="0.6" />
-            </svg>
-          </div>
-          <h2 class="splash-title">Smart Fish Pond</h2>
-          <p class="splash-subtitle">Monitoring Kualitas Air Realtime</p>
-          <div class="splash-progress-track">
-            <div class="splash-progress-bar"></div>
-          </div>
-          <p class="splash-status">Memuat sistem…</p>
+  <!-- Placeholder root: otomatis digantikan saat React selesai di-render -->
+  <div id="root">
+    <div class="splash-container" role="status" aria-live="polite">
+      <div class="splash-card">
+        <div class="splash-brand-icon" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2.5S5.5 10 5.5 14.5a6.5 6.5 0 0 0 13 0C18.5 10 12 2.5 12 2.5z" />
+            <path d="M10 16a2.5 2.5 0 0 0 2.5 2.5" opacity="0.6" />
+          </svg>
         </div>
+        <h2 class="splash-title">Smart Fish Pond</h2>
+        <p class="splash-subtitle">Monitoring Kualitas Air Realtime</p>
+        <div class="splash-progress-track">
+          <div class="splash-progress-bar"></div>
+        </div>
+        <p class="splash-status">Memuat sistem…</p>
       </div>
     </div>
+  </div>
 
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+
 </html>

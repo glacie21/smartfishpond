@@ -9,7 +9,7 @@ setiap pull request:
 | `backend-integration` | Test integrasi terhadap PostgreSQL 16 (service container): migrasi dari nol, repository, rollup per jam, dan alur HTTP penuh |
 | `frontend`            | ESLint (+ aturan React/hooks) + test komponen (vitest + Testing Library) + build Vite |
 | `firmware`            | `pio test -e native` (rumus sensor & timer di host) + kompilasi ESP32 |
-| `compose`             | `docker compose config` untuk stack dev dan produksi                |
+| `compose`             | `docker compose config` untuk stack dev dan produksi, lalu build image backend & frontend |
 
 Job firmware menyalin `secrets.example.h` menjadi `secrets.h` karena file
 aslinya sengaja tidak masuk repo.

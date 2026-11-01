@@ -10,7 +10,7 @@ ke dashboard React secara realtime.
 
 [![CI](https://github.com/glacie21/smartfishpond/actions/workflows/ci.yml/badge.svg)](https://github.com/glacie21/smartfishpond/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Node](https://img.shields.io/badge/Node.js-%3E%3D20-339933?logo=node.js&logoColor=white)](https://nodejs.org)
+[![Node](https://img.shields.io/badge/Node.js-%3E%3D24-339933?logo=node.js&logoColor=white)](https://nodejs.org)
 [![ESP32](https://img.shields.io/badge/ESP32-PlatformIO-orange?logo=platformio&logoColor=white)](https://platformio.org)
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)](https://react.dev)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org)
@@ -108,7 +108,7 @@ tanpa polling.
 | --- | --- |
 | **Firmware** | ESP32 · PlatformIO · C++/Arduino |
 | **Broker** | Eclipse Mosquitto (MQTT + WebSocket) |
-| **Backend** | Node.js 20 · Express · Socket.IO · `mqtt` · `pg` · Zod · Helmet |
+| **Backend** | Node.js 24 LTS · Express · Socket.IO · `mqtt` · `pg` · Zod · Helmet |
 | **Database** | PostgreSQL |
 | **Frontend** | React 18 · Vite · React Router · Recharts · socket.io-client |
 | **DevOps** | Docker Compose · GitHub Actions · npm workspaces |
@@ -121,7 +121,7 @@ tanpa polling.
 
 | Kebutuhan | Versi | Untuk |
 | --- | --- | --- |
-| Node.js & npm | `>= 20` / `>= 9` | backend + frontend (npm workspaces) |
+| Node.js & npm | `>= 24` (LTS) / `>= 10` | backend + frontend (npm workspaces) |
 | Docker & Docker Compose | terbaru | PostgreSQL + Mosquitto |
 | PlatformIO | terbaru | firmware ESP32 (opsional) |
 

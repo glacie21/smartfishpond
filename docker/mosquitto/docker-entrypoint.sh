@@ -8,6 +8,10 @@
 # ============================================================
 set -eu
 
+# File baru (password, ACL) hanya bisa dibaca pemiliknya sejak dibuat:
+# mosquitto_passwd memeriksa izin file sebelum chmod di bawah sempat berjalan.
+umask 077
+
 SETUP=/mosquitto/setup
 CONF=/mosquitto/config
 PASSWD="$CONF/passwd"

@@ -19,9 +19,9 @@ STAMP=$(date -u +%Y%m%dT%H%M%SZ)
 TMP="$BACKUP_DIR/.backup-$STAMP.partial"
 
 # POSTGRES_USER/POSTGRES_DB dibaca dari env container, sama dengan saat dibuat.
-docker compose exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --format=custom' > "$TMP"
+docker compose exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --format=custom' </dev/null > "$TMP"
 
-DB=$(docker compose exec -T postgres sh -c 'printf %s "$POSTGRES_DB"')
+DB=$(docker compose exec -T postgres sh -c 'printf %s "$POSTGRES_DB"' </dev/null)
 FILE="$BACKUP_DIR/$DB-$STAMP.dump"
 mv "$TMP" "$FILE"
 
