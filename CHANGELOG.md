@@ -36,6 +36,8 @@ dan proyek ini memakai [Semantic Versioning](https://semver.org/lang/id/).
 
 ### Diubah
 
+- **Node.js 24 LTS** (sebelumnya 20, yang sudah tidak didukung sejak
+  April 2026) untuk Docker, CI, dan `engines`.
 - Device kini **terkunci ke kolam terdaftarnya**: pesan MQTT yang topiknya
   menyebut kolam lain ditolak. Pindah kolam lewat dashboard, lalu ganti
   `POND_ID` di firmware.
@@ -55,6 +57,13 @@ dan proyek ini memakai [Semantic Versioning](https://semver.org/lang/id/).
 
 ### Diperbaiki
 
+- Image Docker backend & frontend gagal di-build (`npm ci` tidak menemukan
+  `package-lock.json` karena npm workspaces menyimpannya di root). Build
+  context kini root repo; CI ikut mem-build image.
+- `scripts/restore-db.sh` berhenti diam-diam saat jawaban konfirmasi
+  dikirim lewat pipe (stdin tertelan `docker compose exec`).
+- Peringatan izin file password Mosquitto; manifest PWA kini dikirim dengan
+  tipe `application/manifest+json`.
 - Status aktuator yang tiba sebelum pesan status pertama device tidak lagi
   hilang.
 - `npm run user:create -- <username>` tanpa `--role` kini berfungsi.

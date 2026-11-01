@@ -46,7 +46,10 @@ services:
       - mosquitto_log:/mosquitto/log
 
   backend:
-    build: ./backend
+    # Context root repo: npm workspaces punya satu lockfile di root.
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: fishpond-backend
     profiles: ["full"]
     restart: unless-stopped
@@ -76,7 +79,8 @@ services:
 
   frontend:
     build:
-      context: ./frontend
+      context: .
+      dockerfile: frontend/Dockerfile
       args:
         VITE_API_BASE_URL: http://localhost:${BACKEND_PORT:-4000}
         VITE_SOCKET_URL: http://localhost:${BACKEND_PORT:-4000}

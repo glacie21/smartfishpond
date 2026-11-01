@@ -1,13 +1,19 @@
-FROM node:20-alpine
+# Build context = root repo (lihat docker-compose.yml): proyek memakai npm
+# workspaces, jadi satu-satunya package-lock.json ada di root.
+FROM node:24-alpine
 
 WORKDIR /app
 
-# Install dependency lebih dulu agar layer cache tidak batal tiap ubah kode.
-COPY package*.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+# Manifest dulu agar layer dependency tidak batal tiap ubah kode.
+# package.json frontend ikut disalin karena lockfile mencakup semua workspace.
+COPY package.json package-lock.json ./
+COPY backend/package.json backend/
+COPY frontend/package.json frontend/
+RUN npm ci --workspace backend --omit=dev && npm cache clean --force
 
-COPY src ./src
+COPY backend/src backend/src
 
+WORKDIR /app/backend
 ENV NODE_ENV=production
 EXPOSE 4000
 

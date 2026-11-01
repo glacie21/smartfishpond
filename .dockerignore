@@ -1,0 +1,29 @@
+# Build context image backend & frontend adalah root repo (npm workspaces).
+# Hanya manifest npm, backend/src, dan frontend/ yang dibutuhkan; sisanya
+# dikecualikan agar build cepat dan rahasia tidak ikut masuk image.
+
+**/node_modules
+**/dist
+**/coverage
+**/.vite
+**/npm-debug.log*
+
+.git
+.github
+firmware
+docs
+scripts
+deploy
+backups
+*.dump
+
+# Rahasia
+**/.env
+**/.env.*
+!**/.env.example
+docker/mosquitto/credentials
+docker/mosquitto/certs
+
+# Test & alat pengembangan backend tidak dibutuhkan di image produksi
+backend/tests
+backend/vitest*.config.js
