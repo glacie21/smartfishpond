@@ -1,0 +1,3 @@
+# Dashboard privat (wajib login): tidak ada yang perlu diindeks mesin pencari.
+User-agent: *
+Disallow: /

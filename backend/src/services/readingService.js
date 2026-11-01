@@ -11,6 +11,13 @@ const ALLOWED_BUCKETS = new Set([
   '1 day',
 ]);
 
+/**
+ * Bucket kelipatan jam dibaca dari rollup readings_hourly: lebih ringan untuk
+ * rentang panjang dan tetap tersedia setelah data mentah melewati retensi.
+ * Bucket di bawah satu jam butuh data mentah.
+ */
+const HOURLY_BUCKETS = new Set(['1 hour', '6 hours', '1 day']);
+
 const MAX_LIMIT = 5000;
 
 export function getHistory({ pondId, deviceId, from, to, limit }) {
@@ -25,7 +32,10 @@ export function getAggregated({ pondId, deviceId, from, to, bucket = '1 hour' })
       { allowed: [...ALLOWED_BUCKETS] },
     );
   }
-  return readingRepository.findAggregated({ pondId, deviceId, from, to, bucket });
+  const filter = { pondId, deviceId, from, to, bucket };
+  return HOURLY_BUCKETS.has(bucket)
+    ? readingRepository.findAggregatedFromHourly(filter)
+    : readingRepository.findAggregated(filter);
 }
 
 export function getLatestByDevice(deviceId) {

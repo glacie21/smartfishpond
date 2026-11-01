@@ -23,7 +23,7 @@ export function useTimeRange(defaultId = '24h') {
     const to = new Date();
     const from = new Date(to.getTime() - range.hours * 60 * 60 * 1000);
     return { from: from.toISOString(), to: to.toISOString(), bucket: range.bucket };
-  }, [rangeId]);
+  }, [range]); // objek di TIME_RANGES konstan, jadi hanya berubah saat rentang diganti
 
   return { rangeId, setRangeId, range, params };
 }

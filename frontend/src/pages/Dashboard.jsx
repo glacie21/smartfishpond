@@ -18,8 +18,9 @@ export function Dashboard() {
   }, []);
 
   const ponds = data?.ponds ?? [];
-  const overviews = data?.overviews ?? [];
   const stats = useMemo(() => {
+    const ponds = data?.ponds ?? [];
+    const overviews = data?.overviews ?? [];
     // Tiap kolam bisa punya ambang sendiri, jadi evaluasi memakai thresholds kolamnya.
     const alerts = overviews.flatMap((overview) =>
       (overview?.latestReadings ?? []).flatMap((reading) =>
@@ -37,7 +38,7 @@ export function Dashboard() {
       alertCount: alerts.length,
       alerts: alerts.slice(0, 3),
     };
-  }, [overviews, ponds]);
+  }, [data]);
 
   if (loading) return <Loading label="Memuat daftar kolam..." />;
   if (error) return <ErrorState message={error} onRetry={refetch} />;

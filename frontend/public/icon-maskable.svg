@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Ikon untuk layar utama ponsel: latar penuh, logo di zona aman 80% tengah. -->
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a1628"/>
+      <stop offset="100%" stop-color="#0d1f35"/>
+    </linearGradient>
+    <linearGradient id="drop" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22d3ee"/>
+      <stop offset="100%" stop-color="#0891b2"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <g transform="translate(128 120) scale(8)">
+    <path fill="url(#drop)" d="M16 2.5S5.5 13 5.5 19.5a10.5 10.5 0 0 0 21 0C26.5 13 16 2.5 16 2.5z"/>
+    <path fill="#ffffff" opacity=".85" d="M13 18.5a3.5 3.5 0 0 0 3.5 3.5 1 1 0 0 1 0 2 5.5 5.5 0 0 1-5.5-5.5 1 1 0 0 1 2 0z"/>
+  </g>
+</svg>

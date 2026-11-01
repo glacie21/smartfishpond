@@ -1,26 +1,19 @@
+import js from '@eslint/js';
+import globals from 'globals';
+
 export default [
+  { ignores: ['dist/**', 'coverage/**'] },
+  js.configs.recommended,
   {
     files: ['**/*.js'],
-    ignores: ['dist/**'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
-      globals: {
-        console: 'readonly',
-        process: 'readonly',
-        Buffer: 'readonly',
-        URL: 'readonly',
-        setTimeout: 'readonly',
-        clearTimeout: 'readonly',
-         setInterval: 'readonly',
-         clearInterval: 'readonly',
-        fetch: 'readonly',
-        AbortSignal: 'readonly',
-      },
+      globals: globals.node,
     },
     rules: {
-       'no-unused-vars': 'off',
-      'no-undef': 'error',
+      // Express mengenali error handler dari 4 parameternya; `next` wajib ada meski tak dipakai.
+      'no-unused-vars': ['error', { argsIgnorePattern: '^_|^next$', ignoreRestSiblings: true }],
     },
   },
 ];

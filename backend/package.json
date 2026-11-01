@@ -15,7 +15,7 @@
     "user:create": "node src/cli/createUser.js",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "eslint src"
+    "lint": "eslint src tests"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -31,7 +31,9 @@
     "zod": "^3.23.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
     "eslint": "^9.0.0",
+    "globals": "^15.15.0",
     "socket.io-client": "^4.8.4",
     "supertest": "^7.3.1",
     "vitest": "^1.5.0"
