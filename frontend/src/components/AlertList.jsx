@@ -1,50 +1,31 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { METRIC_BY_KEY } from '../constants/metrics.js';
+import { useAction } from '../hooks/useAction.js';
+import { formatDateTime, formatDuration } from '../lib/format.js';
+import { Icon } from './Icon.jsx';
+import { EmptyState } from './StateViews.jsx';
 import { StatusBadge } from './StatusBadge.jsx';
 
-const dateFormatter = new Intl.DateTimeFormat('id-ID', {
-  dateStyle: 'medium',
-  timeStyle: 'short',
-});
-
-/** Durasi singkat: "12 mnt", "3 jam 5 mnt", "2 hari". */
-function formatDuration(from, to = new Date()) {
-  const minutes = Math.max(0, Math.round((new Date(to) - new Date(from)) / 60000));
-  if (minutes < 60) return `${minutes} mnt`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 48) return `${hours} jam${minutes % 60 ? ` ${minutes % 60} mnt` : ''}`;
-  return `${Math.floor(hours / 24)} hari`;
-}
-
 function AlertItem({ alert, showPond, onAcknowledge }) {
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(null);
+  const { busy, error, run } = useAction(onAcknowledge);
   const resolved = Boolean(alert.resolved_at);
-  const title =
-    alert.type === 'device_offline' ? 'Perangkat offline' : METRIC_BY_KEY[alert.metric]?.label ?? alert.metric;
-
-  async function handleAcknowledge() {
-    setBusy(true);
-    setError(null);
-    try {
-      await onAcknowledge(alert.id);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setBusy(false);
-    }
-  }
+  const offline = alert.type === 'device_offline';
+  const title = offline ? 'Perangkat offline' : METRIC_BY_KEY[alert.metric]?.label ?? alert.metric;
+  const icon = offline ? 'cpu' : METRIC_BY_KEY[alert.metric]?.icon ?? 'alert';
 
   return (
-    <li className={`alert-item alert-item--${resolved ? 'resolved' : alert.severity}`}>
+    <li className={`card alert-item is-${resolved ? 'resolved' : alert.severity}`}>
+      <span className="alert-item__icon">
+        <Icon name={icon} />
+      </span>
+
       <div className="alert-item__main">
         <div className="alert-item__title">
+          <strong>{title}</strong>
           <StatusBadge status={resolved ? 'normal' : alert.severity}>
             {resolved ? 'Pulih' : alert.severity === 'critical' ? 'Kritis' : 'Waspada'}
           </StatusBadge>
-          <strong>{title}</strong>
         </div>
         <p className="alert-item__message">{alert.message}</p>
         <p className="alert-item__meta">
@@ -56,7 +37,7 @@ function AlertItem({ alert, showPond, onAcknowledge }) {
           )}
           {alert.device_name ?? alert.device_id}
           {' · '}
-          mulai {dateFormatter.format(new Date(alert.started_at))}
+          <time dateTime={alert.started_at}>mulai {formatDateTime(alert.started_at)}</time>
           {' · '}
           {resolved
             ? `berlangsung ${formatDuration(alert.started_at, alert.resolved_at)}`
@@ -70,7 +51,7 @@ function AlertItem({ alert, showPond, onAcknowledge }) {
           <span className="alert-item__ack">✓ Ditangani {alert.acknowledged_by}</span>
         ) : (
           !resolved && (
-            <button type="button" className="btn btn--quiet btn--small" onClick={handleAcknowledge} disabled={busy}>
+            <button type="button" className="btn btn--ghost btn--sm" onClick={() => run(alert.id)} disabled={busy}>
               {busy ? 'Menyimpan...' : 'Tandai ditangani'}
             </button>
           )
@@ -82,7 +63,13 @@ function AlertItem({ alert, showPond, onAcknowledge }) {
 
 /** Daftar alert; dipakai halaman Alert dan ringkasan di detail kolam. */
 export function AlertList({ alerts, showPond = true, onAcknowledge, emptyText = 'Tidak ada alert.' }) {
-  if (!alerts?.length) return <p className="state state--empty">{emptyText}</p>;
+  if (!alerts?.length) {
+    return (
+      <EmptyState icon="check">
+        <p>{emptyText}</p>
+      </EmptyState>
+    );
+  }
 
   return (
     <ul className="alert-list">

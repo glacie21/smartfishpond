@@ -114,7 +114,9 @@ memblokir path ini dari internet. Daftar metrik ada di
 
 ### `GET /ponds`
 
-Daftar kolam beserta jumlah device dan berapa yang online.
+Daftar kolam beserta jumlah device (`device_count`, `device_online`) dan
+`latest_reading` — pembacaan terbaru kolam itu dari device mana pun
+(`null` bila belum ada data). Cukup satu request untuk seluruh kartu dashboard.
 
 ### `GET /ponds/:id`
 

@@ -2,73 +2,62 @@ import { useEffect, useState } from 'react';
 
 import { api } from '../api/client.js';
 import { METRICS } from '../constants/metrics.js';
+import { useAction } from '../hooks/useAction.js';
 
 function ThresholdRow({ metric, threshold, pondId, onSaved }) {
-  const [min, setMin] = useState('');
-  const [max, setMax] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(null);
+  const [values, setValues] = useState({ min: '', max: '' });
+  const { busy, error, run } = useAction(async (action) => onSaved(await action()));
 
   useEffect(() => {
-    setMin(threshold ? String(threshold.min) : '');
-    setMax(threshold ? String(threshold.max) : '');
+    setValues({ min: threshold ? String(threshold.min) : '', max: threshold ? String(threshold.max) : '' });
   }, [threshold]);
 
-  const dirty = threshold && (Number(min) !== Number(threshold.min) || Number(max) !== Number(threshold.max));
+  const min = Number(values.min);
+  const max = Number(values.max);
+  const dirty = threshold && (min !== Number(threshold.min) || max !== Number(threshold.max));
+  const invalid = values.min === '' || values.max === '' || !(min < max);
+  const custom = threshold?.source === 'pond';
 
-  async function run(action) {
-    setBusy(true);
-    setError(null);
-    try {
-      onSaved(await action());
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const save = () => run(() => api.setThreshold(metric.key, { pondId, min: Number(min), max: Number(max) }));
-  const reset = () => run(() => api.resetThreshold(metric.key, pondId));
+  const input = (key, label) => (
+    <input
+      className={`input input--sm${dirty && invalid ? ' is-invalid' : ''}`}
+      type="number"
+      step="any"
+      value={values[key]}
+      onChange={(e) => setValues((v) => ({ ...v, [key]: e.target.value }))}
+      aria-label={`${label} ${metric.label}`}
+    />
+  );
 
   return (
     <tr>
       <td>
         <span className="table__primary">{metric.label}</span>
-        <span className="table__secondary">
-          {threshold?.source === 'pond' ? 'Khusus kolam ini' : 'Default semua kolam'}
-        </span>
+        <span className="table__secondary">{custom ? 'Khusus kolam ini' : 'Default semua kolam'}</span>
       </td>
-      <td>
-        <input
-          className="input input--small"
-          type="number"
-          step="any"
-          value={min}
-          onChange={(e) => setMin(e.target.value)}
-          aria-label={`Batas bawah ${metric.label}`}
-        />
-      </td>
-      <td>
-        <input
-          className="input input--small"
-          type="number"
-          step="any"
-          value={max}
-          onChange={(e) => setMax(e.target.value)}
-          aria-label={`Batas atas ${metric.label}`}
-        />
-      </td>
+      <td>{input('min', 'Batas bawah')}</td>
+      <td>{input('max', 'Batas atas')}</td>
       <td>{metric.unit || '—'}</td>
       <td className="table__actions">
-        <button type="button" className="btn btn--small" onClick={save} disabled={!dirty || busy}>
+        <button
+          type="button"
+          className="btn btn--sm"
+          onClick={() => run(() => api.setThreshold(metric.key, { pondId, min, max }))}
+          disabled={!dirty || invalid || busy}
+        >
           Simpan
         </button>
-        {threshold?.source === 'pond' && (
-          <button type="button" className="btn btn--quiet btn--small" onClick={reset} disabled={busy}>
+        {custom && (
+          <button
+            type="button"
+            className="btn btn--ghost btn--sm"
+            onClick={() => run(() => api.resetThreshold(metric.key, pondId))}
+            disabled={busy}
+          >
             Pakai default
           </button>
         )}
+        {dirty && invalid && <p className="form-error">Batas bawah harus lebih kecil dari batas atas.</p>}
         {error && <p className="form-error">{error}</p>}
       </td>
     </tr>
@@ -81,7 +70,7 @@ function ThresholdRow({ metric, threshold, pondId, onSaved }) {
  */
 export function ThresholdEditor({ pondId, thresholds, onChange }) {
   return (
-    <div className="table-wrapper">
+    <div className="card table-wrapper">
       <table className="table">
         <thead>
           <tr>
@@ -89,7 +78,7 @@ export function ThresholdEditor({ pondId, thresholds, onChange }) {
             <th>Batas bawah</th>
             <th>Batas atas</th>
             <th>Satuan</th>
-            <th />
+            <th aria-label="Aksi" />
           </tr>
         </thead>
         <tbody>

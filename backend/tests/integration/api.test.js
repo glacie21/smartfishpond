@@ -63,6 +63,19 @@ describe('alur kolam, device, dan alert', () => {
     expect(res.body.data.devices[0].status).toBe('online');
   });
 
+  it('daftar kolam membawa jumlah device dan pembacaan terbaru', async () => {
+    const res = await request(app).get('/api/ponds').set('Authorization', viewer);
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual([
+      expect.objectContaining({
+        id: 'pond-01',
+        device_count: 1,
+        device_online: 1,
+        latest_reading: expect.objectContaining({ temperature: 28, ph: 7.2, dissolved_oxygen: 7 }),
+      }),
+    ]);
+  });
+
   it('DO rendah dua kali berturut-turut membuka alert kritis', async () => {
     for (let i = 0; i < 2; i++) {
       await ingestTelemetry({ deviceId: 'esp32-node-01', pondId: 'pond-01', metrics: { dissolvedOxygen: 3 } });

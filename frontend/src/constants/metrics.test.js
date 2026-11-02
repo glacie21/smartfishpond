@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { evaluateMetric, formatMetric, rangeFor } from './metrics.js';
+import { evaluateMetric, formatMetric, rangeFor, worstStatus } from './metrics.js';
 
 describe('rangeFor', () => {
   it('memakai ambang dari server bila ada', () => {
@@ -49,5 +49,13 @@ describe('formatMetric', () => {
 
   it('menampilkan tanda pisah untuk nilai kosong', () => {
     expect(formatMetric('ph', null)).toBe('—');
+  });
+});
+
+describe('worstStatus', () => {
+  it('memilih status paling parah', () => {
+    expect(worstStatus(['normal', 'critical', 'warning'])).toBe('critical');
+    expect(worstStatus(['normal', 'warning'])).toBe('warning');
+    expect(worstStatus([])).toBe('unknown');
   });
 });

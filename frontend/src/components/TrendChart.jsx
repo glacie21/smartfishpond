@@ -1,7 +1,8 @@
+import { useId } from 'react';
 import {
+  Area,
+  AreaChart,
   CartesianGrid,
-  Line,
-  LineChart,
   ReferenceArea,
   ResponsiveContainer,
   Tooltip,
@@ -9,98 +10,110 @@ import {
   YAxis,
 } from 'recharts';
 
-import { METRIC_BY_KEY } from '../constants/metrics.js';
+import { formatMetric, METRIC_BY_KEY } from '../constants/metrics.js';
+import { formatClock, formatDayClock } from '../lib/format.js';
+import { Icon } from './Icon.jsx';
 
-const timeFormatter = new Intl.DateTimeFormat('id-ID', {
-  hour: '2-digit',
-  minute: '2-digit',
-});
-
-const fullFormatter = new Intl.DateTimeFormat('id-ID', {
-  day: '2-digit',
-  month: 'short',
-  hour: '2-digit',
-  minute: '2-digit',
-});
+const TOOLTIP_STYLE = {
+  background: 'var(--surface-solid)',
+  border: '1px solid var(--border)',
+  borderRadius: 10,
+  color: 'var(--text)',
+  boxShadow: 'var(--shadow)',
+};
 
 /**
  * Grafik tren satu metrik.
  *
  * @param metricKey kunci metrik (mis. 'temperature')
- * @param data      array baris; tiap baris punya `bucket`/`recorded_at`
- *                  dan kolom nilai
- * @param valueKey  nama kolom nilai — `<metricKey>_avg` untuk data agregat,
- *                  atau `metricKey` untuk data mentah
+ * @param data      baris dengan `bucket`/`recorded_at` dan kolom nilai
+ * @param valueKey  kolom nilai — `<metricKey>_avg` untuk data agregat
  * @param range     rentang aman [min, max]; default `safeRange` bawaan
+ * @param multiDay  rentang > 1 hari: sumbu waktu menampilkan tanggal
  */
-export function TrendChart({ metricKey, data, valueKey, range }) {
+export function TrendChart({ metricKey, data, valueKey = metricKey, range, multiDay = false }) {
   const metric = METRIC_BY_KEY[metricKey];
-  const field = valueKey ?? metricKey;
+  const gradientId = useId();
   const [safeMin, safeMax] = range ?? metric.safeRange;
 
   const points = (data ?? [])
     .map((row) => ({
       time: new Date(row.bucket ?? row.recorded_at).getTime(),
-      value: row[field] === null || row[field] === undefined ? null : Number(row[field]),
+      value: row[valueKey] == null ? null : Number(row[valueKey]),
     }))
     .filter((p) => Number.isFinite(p.time));
-
-  if (points.length === 0) {
-    return (
-      <section className="chart-card">
-        <h3 className="chart-card__title">{metric.label}</h3>
-        <p className="chart-card__empty">Belum ada data pada rentang ini.</p>
-      </section>
-    );
-  }
+  const values = points.map((p) => p.value).filter((v) => v !== null);
+  const stats = values.length
+    ? {
+        min: Math.min(...values),
+        avg: values.reduce((a, b) => a + b, 0) / values.length,
+        max: Math.max(...values),
+      }
+    : null;
 
   return (
-    <section className="chart-card">
-      <h3 className="chart-card__title">
-        {metric.label} {metric.unit && <span className="chart-card__unit">({metric.unit})</span>}
-      </h3>
+    <section className="card chart-card" style={{ '--metric-color': metric.color }}>
+      <header className="chart-card__header">
+        <h3 className="chart-card__title">
+          <Icon name={metric.icon} />
+          {metric.label}
+          {metric.unit && <span className="muted">({metric.unit})</span>}
+        </h3>
+        {stats && (
+          <dl className="chart-card__stats">
+            {Object.entries({ min: 'Min', avg: 'Rata²', max: 'Maks' }).map(([key, label]) => (
+              <div key={key}>
+                <dt>{label}</dt>
+                <dd>{formatMetric(metricKey, stats[key])}</dd>
+              </div>
+            ))}
+          </dl>
+        )}
+      </header>
 
-      <ResponsiveContainer width="100%" height={220}>
-        <LineChart data={points} margin={{ top: 8, right: 12, bottom: 4, left: -12 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-
-          {/* Pita rentang aman sebagai konteks di belakang garis. */}
-          <ReferenceArea y1={safeMin} y2={safeMax} fill={metric.color} fillOpacity={0.08} />
-
-          <XAxis
-            dataKey="time"
-            type="number"
-            domain={['dataMin', 'dataMax']}
-            scale="time"
-            tickFormatter={(t) => timeFormatter.format(new Date(t))}
-            stroke="var(--text-muted)"
-            fontSize={12}
-          />
-          <YAxis stroke="var(--text-muted)" fontSize={12} width={52} domain={['auto', 'auto']} />
-          <Tooltip
-            labelFormatter={(t) => fullFormatter.format(new Date(t))}
-            formatter={(value) => [
-              Number(value).toFixed(metric.decimals) + ' ' + metric.unit,
-              metric.label,
-            ]}
-            contentStyle={{
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              borderRadius: 8,
-              color: 'var(--text)',
-            }}
-          />
-          <Line
-            type="monotone"
-            dataKey="value"
-            stroke={metric.color}
-            strokeWidth={2}
-            dot={false}
-            connectNulls={false}
-            isAnimationActive={false}
-          />
-        </LineChart>
-      </ResponsiveContainer>
+      {!stats ? (
+        <p className="chart-card__empty">Belum ada data pada rentang ini.</p>
+      ) : (
+        <ResponsiveContainer width="100%" height={200}>
+          <AreaChart data={points} margin={{ top: 8, right: 8, bottom: 0, left: -16 }}>
+            <defs>
+              <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={metric.color} stopOpacity={0.35} />
+                <stop offset="100%" stopColor={metric.color} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+            {/* Pita rentang aman sebagai konteks di belakang garis. */}
+            <ReferenceArea y1={safeMin} y2={safeMax} fill="var(--normal)" fillOpacity={0.07} />
+            <XAxis
+              dataKey="time"
+              type="number"
+              domain={['dataMin', 'dataMax']}
+              scale="time"
+              tickFormatter={multiDay ? formatDayClock : formatClock}
+              stroke="var(--text-muted)"
+              fontSize={11}
+              tickLine={false}
+              minTickGap={24}
+            />
+            <YAxis stroke="var(--text-muted)" fontSize={11} width={52} tickLine={false} axisLine={false} domain={['auto', 'auto']} />
+            <Tooltip
+              labelFormatter={formatDayClock}
+              formatter={(value) => [`${formatMetric(metricKey, value)} ${metric.unit}`, metric.label]}
+              contentStyle={TOOLTIP_STYLE}
+            />
+            <Area
+              type="monotone"
+              dataKey="value"
+              stroke={metric.color}
+              strokeWidth={2}
+              fill={`url(#${gradientId})`}
+              connectNulls={false}
+              isAnimationActive={false}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      )}
     </section>
   );
 }
