@@ -1,61 +1,80 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { getSocket } from '../api/socket.js';
 
 /**
- * Berlangganan event realtime untuk satu kolam.
+ * Bergabung ke room beberapa kolam dan memasang handler event Socket.IO.
+ * Room di-join ulang setiap (re)connect. Handler dibaca lewat ref sehingga
+ * versi terbarunya selalu dipakai tanpa memasang ulang listener; himpunan
+ * nama event-nya dianggap tetap.
  *
- * Mengembalikan:
+ * @param pondIds  daftar id kolam
+ * @param handlers { [namaEvent]: (payload) => void }
+ * @returns apakah socket sedang terhubung
+ */
+export function usePondRooms(pondIds, handlers) {
+  const [connected, setConnected] = useState(false);
+  const handlersRef = useRef(handlers);
+  handlersRef.current = handlers;
+  const roomKey = pondIds.join('\n');
+
+  useEffect(() => {
+    const ids = roomKey ? roomKey.split('\n') : [];
+    const socket = getSocket();
+    const join = () => {
+      setConnected(true);
+      for (const id of ids) socket.emit('subscribe:pond', id);
+    };
+    const drop = () => setConnected(false);
+    const listeners = Object.keys(handlersRef.current).map((event) => [
+      event,
+      (payload) => handlersRef.current[event]?.(payload),
+    ]);
+
+    socket.on('connect', join);
+    socket.on('disconnect', drop);
+    for (const [event, fn] of listeners) socket.on(event, fn);
+    if (socket.connected) join();
+
+    return () => {
+      for (const id of ids) socket.emit('unsubscribe:pond', id);
+      socket.off('connect', join);
+      socket.off('disconnect', drop);
+      for (const [event, fn] of listeners) socket.off(event, fn);
+    };
+  }, [roomKey]);
+
+  return connected;
+}
+
+/**
+ * Event realtime satu kolam:
  *   - latestReading : pembacaan terakhir yang diterima
  *   - devicePatches : { [deviceId]: perubahan status/aktuator } untuk
  *                     digabungkan ke daftar device hasil REST
  *   - commands      : { [commandId]: status perintah aktuator terbaru }
- * Komponen pemanggil memakai nilai ini untuk memperbarui UI tanpa polling.
  */
 export function usePondRealtime(pondId) {
-  const [connected, setConnected] = useState(false);
   const [latestReading, setLatestReading] = useState(null);
   const [devicePatches, setDevicePatches] = useState({});
   const [commands, setCommands] = useState({});
 
+  // Ganti kolam: buang sisa event kolam sebelumnya.
   useEffect(() => {
-    if (!pondId) return undefined;
-
+    setLatestReading(null);
     setDevicePatches({});
     setCommands({});
-    const socket = getSocket();
-
-    const patchDevice = (patch) =>
-      setDevicePatches((all) => ({ ...all, [patch.id]: { ...all[patch.id], ...patch } }));
-
-    const onConnect = () => {
-      setConnected(true);
-      // Room di-join ulang setiap connect, termasuk setelah reconnect.
-      socket.emit('subscribe:pond', pondId);
-    };
-    const onDisconnect = () => setConnected(false);
-    const onReading = (reading) => setLatestReading(reading);
-    const onCommand = (command) => setCommands((all) => ({ ...all, [command.id]: command }));
-
-    socket.on('connect', onConnect);
-    socket.on('disconnect', onDisconnect);
-    socket.on('reading:new', onReading);
-    socket.on('device:status', patchDevice);
-    socket.on('device:actuators', patchDevice);
-    socket.on('command:updated', onCommand);
-
-    if (socket.connected) onConnect();
-
-    return () => {
-      socket.emit('unsubscribe:pond', pondId);
-      socket.off('connect', onConnect);
-      socket.off('disconnect', onDisconnect);
-      socket.off('reading:new', onReading);
-      socket.off('device:status', patchDevice);
-      socket.off('device:actuators', patchDevice);
-      socket.off('command:updated', onCommand);
-    };
   }, [pondId]);
+
+  const patchDevice = (patch) =>
+    setDevicePatches((all) => ({ ...all, [patch.id]: { ...all[patch.id], ...patch } }));
+
+  const connected = usePondRooms(pondId ? [pondId] : [], {
+    'reading:new': (reading) => reading.pond_id === pondId && setLatestReading(reading),
+    'device:status': patchDevice,
+    'device:actuators': patchDevice,
+    'command:updated': (command) => setCommands((all) => ({ ...all, [command.id]: command })),
+  });
 
   return { connected, latestReading, devicePatches, commands };
 }

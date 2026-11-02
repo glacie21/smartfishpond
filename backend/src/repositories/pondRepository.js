@@ -1,13 +1,24 @@
 import { query } from '../db/pool.js';
 
+/**
+ * Daftar kolam beserta jumlah device dan pembacaan terbarunya, cukup satu
+ * query untuk seluruh kartu dashboard. LATERAL + LIMIT 1 memakai index
+ * (pond_id, recorded_at) sehingga tetap ringan meski tabel readings besar.
+ */
 export async function findAll() {
   const { rows } = await query(`
     SELECT p.*,
-           count(d.id) FILTER (WHERE d.id IS NOT NULL)          AS device_count,
-           count(d.id) FILTER (WHERE d.status = 'online')       AS device_online
+           (SELECT count(*)::int FROM devices d WHERE d.pond_id = p.id)                         AS device_count,
+           (SELECT count(*)::int FROM devices d WHERE d.pond_id = p.id AND d.status = 'online') AS device_online,
+           to_jsonb(r) AS latest_reading
     FROM ponds p
-    LEFT JOIN devices d ON d.pond_id = p.id
-    GROUP BY p.id
+    LEFT JOIN LATERAL (
+      SELECT recorded_at, temperature, ph, tds, dissolved_oxygen, turbidity, water_level
+        FROM readings
+       WHERE pond_id = p.id
+       ORDER BY recorded_at DESC
+       LIMIT 1
+    ) r ON true
     ORDER BY p.created_at
   `);
   return rows;

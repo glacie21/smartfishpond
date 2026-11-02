@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 
+import { Icon, Logo } from '../components/Icon.jsx';
+import { Field } from '../components/ui.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 
 export function Login() {
@@ -8,6 +10,7 @@ export function Login() {
   const location = useLocation();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -35,29 +38,22 @@ export function Login() {
 
   return (
     <div className="login">
-      <form className="login__card" onSubmit={handleSubmit}>
+      <form className="card login__card" onSubmit={handleSubmit}>
         <div className="login__brand">
-          <span className="app__logo" aria-hidden="true">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 2.5S5.5 10 5.5 14.5a6.5 6.5 0 0 0 13 0C18.5 10 12 2.5 12 2.5z" />
-              <path d="M10 16a2.5 2.5 0 0 0 2.5 2.5" opacity="0.6" />
-            </svg>
-          </span>
-          <div>
-            <h1 className="app__title">Smart Fish Pond</h1>
-            <p className="app__subtitle">Masuk untuk memantau kolam</p>
-          </div>
+          <Logo size={52} />
+          <h1 className="login__title">Smart Fish Pond</h1>
+          <p className="muted">Masuk untuk memantau kolam</p>
         </div>
 
         {message && (
-          <p className="login__error" role="alert">
+          <p className="banner is-critical" role="alert">
             {message}
           </p>
         )}
 
-        <label className="login__field">
-          <span>Username</span>
+        <Field label="Username">
           <input
+            className="input"
             type="text"
             name="username"
             autoComplete="username"
@@ -66,21 +62,36 @@ export function Login() {
             value={username}
             onChange={(event) => setUsername(event.target.value)}
           />
-        </label>
+        </Field>
 
-        <label className="login__field">
-          <span>Password</span>
-          <input
-            type="password"
-            name="password"
-            autoComplete="current-password"
-            required
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-          />
-        </label>
+        <div className="field">
+          <label className="field__label" htmlFor="login-password">
+            Password
+          </label>
+          <div className="input-group">
+            <input
+              id="login-password"
+              className="input"
+              type={showPassword ? 'text' : 'password'}
+              name="password"
+              autoComplete="current-password"
+              required
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+            />
+            <button
+              type="button"
+              className="icon-btn"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+              aria-pressed={showPassword}
+            >
+              <Icon name="eye" size={16} />
+            </button>
+          </div>
+        </div>
 
-        <button type="submit" className="btn login__submit" disabled={submitting}>
+        <button type="submit" className="btn btn--block" disabled={submitting}>
           {submitting ? 'Memeriksa...' : 'Masuk'}
         </button>
       </form>

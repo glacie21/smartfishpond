@@ -1,13 +1,17 @@
+import { lazy } from 'react';
 import { Route, Routes } from 'react-router-dom';
 
 import { Layout } from './components/Layout.jsx';
 import { RequireAuth } from './components/RequireAuth.jsx';
-import { Alerts } from './pages/Alerts.jsx';
 import { Dashboard } from './pages/Dashboard.jsx';
-import { Devices } from './pages/Devices.jsx';
 import { Login } from './pages/Login.jsx';
 import { NotFound } from './pages/NotFound.jsx';
-import { PondDetail } from './pages/PondDetail.jsx';
+
+// Dimuat saat dibuka: Recharts (grafik) hanya diunduh ketika detail kolam dibuka.
+const named = (load, name) => lazy(() => load().then((m) => ({ default: m[name] })));
+const PondDetail = named(() => import('./pages/PondDetail.jsx'), 'PondDetail');
+const Devices = named(() => import('./pages/Devices.jsx'), 'Devices');
+const Alerts = named(() => import('./pages/Alerts.jsx'), 'Alerts');
 
 export default function App() {
   return (

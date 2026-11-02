@@ -1,16 +1,15 @@
 import { Link } from 'react-router-dom';
 
+import { Icon } from '../components/Icon.jsx';
+import { EmptyState } from '../components/StateViews.jsx';
+
 export function NotFound() {
   return (
-    <div className="state state--empty">
-      <div style={{ fontSize: '3rem', marginBottom: 8 }}>🌊</div>
-      <h2>Halaman tidak ditemukan</h2>
-      <p className="state__hint">
-        Halaman yang Anda cari tidak ada atau telah dipindahkan.
-      </p>
+    <EmptyState icon="waves" title="Halaman tidak ditemukan">
+      <p className="state__hint">Halaman yang Anda cari tidak ada atau telah dipindahkan.</p>
       <Link to="/" className="btn">
-        ← Kembali ke dashboard
+        <Icon name="back" size={16} /> Kembali ke dashboard
       </Link>
-    </div>
+    </EmptyState>
   );
 }

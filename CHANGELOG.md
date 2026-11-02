@@ -6,6 +6,29 @@ dan proyek ini memakai [Semantic Versioning](https://semver.org/lang/id/).
 
 ## [Unreleased]
 
+### Diubah — perombakan dashboard
+
+- **Tampilan:** design system baru (kelas dasar `.card`, ikon SVG pengganti
+  emoji), tema terang/gelap/sistem yang bisa dipilih, kontras warna status
+  mode terang memenuhi WCAG AA, fokus keyboard terlihat, skip-link, dan
+  bilah menu bawah di ponsel.
+- **Dashboard:** kartu kolam menampilkan 6 nilai sensor terkini yang
+  diperbarui realtime, status kolam dari alert backend, peringatan data basi;
+  `GET /ponds` kini membawa `latest_reading` sehingga tidak ada lagi
+  N+1 request ke `/overview`.
+- **Kelola kolam:** tambah, ubah (nama, lokasi, komoditas, kedalaman), dan
+  hapus kolam dari dashboard.
+- **Perangkat & alert:** pencarian, filter status, indikator sinyal, waktu
+  relatif; tab alert Aktif/Pulih/Semua dengan filter tingkat keparahan; toast
+  saat alert baru muncul dan jumlah alert di judul tab browser.
+- **Grafik:** area bergradien dengan ringkasan min/rata-rata/maks; Recharts
+  dimuat terpisah sehingga bundle awal turun dari 184 KB menjadi 77 KB (gzip).
+- **Perbaikan:** respons lama tidak lagi menimpa respons baru saat cepat
+  berganti rentang grafik; pembacaan kolam sebelumnya tidak lagi "nyangkut"
+  saat pindah ke kolam tanpa data; kartu metrik memakai pembacaan terbaru
+  antar device; validasi batas bawah < batas atas di editor ambang; error
+  render tertangkap per halaman (ErrorBoundary).
+
 ### Ditambahkan
 
 - **Keamanan:** login JWT dengan peran `admin`/`viewer`, halaman login di

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -44,7 +44,7 @@ describe('ActuatorPanel', () => {
     render(<ActuatorPanel device={onlineDevice} canControl commands={{}} />);
 
     const feeder = row('Pemberi pakan');
-    await userEvent.click(feeder.querySelector('button.btn:not(.btn--quiet)'));
+    await userEvent.click(within(feeder).getByRole('button', { name: 'Nyalakan' }));
 
     expect(api.sendCommand).toHaveBeenCalledWith('esp32-node-01', {
       actuator: 'feeder',
@@ -59,7 +59,7 @@ describe('ActuatorPanel', () => {
     render(<ActuatorPanel device={onlineDevice} canControl commands={{}} />);
 
     const aerator = row('Aerator');
-    await userEvent.click(aerator.querySelector('button.btn--quiet'));
+    await userEvent.click(within(aerator).getByRole('button', { name: 'Matikan' }));
 
     expect(api.sendCommand).toHaveBeenCalledWith('esp32-node-01', { actuator: 'aerator', state: false });
   });
@@ -68,7 +68,7 @@ describe('ActuatorPanel', () => {
     api.sendCommand.mockResolvedValue({ id: 'cmd-3', status: 'sent' });
     const { rerender } = render(<ActuatorPanel device={onlineDevice} canControl commands={{}} />);
 
-    await userEvent.click(row('Pompa air').querySelector('button.btn:not(.btn--quiet)'));
+    await userEvent.click(within(row('Pompa air')).getByRole('button', { name: 'Nyalakan' }));
     rerender(
       <ActuatorPanel
         device={onlineDevice}
@@ -84,7 +84,7 @@ describe('ActuatorPanel', () => {
     api.sendCommand.mockRejectedValue(new Error('Perangkat "esp32-node-01" sedang offline'));
     render(<ActuatorPanel device={onlineDevice} canControl commands={{}} />);
 
-    await userEvent.click(row('Aerator').querySelector('button.btn:not(.btn--quiet)'));
+    await userEvent.click(within(row('Aerator')).getByRole('button', { name: 'Nyalakan' }));
     expect(row('Aerator')).toHaveTextContent('sedang offline');
   });
 

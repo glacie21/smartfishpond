@@ -9,6 +9,7 @@
 export const METRICS = [
   {
     key: 'temperature',
+    icon: 'thermometer',
     label: 'Suhu Air',
     unit: '°C',
     safeRange: [26, 32],
@@ -17,6 +18,7 @@ export const METRICS = [
   },
   {
     key: 'ph',
+    icon: 'flask',
     label: 'pH',
     unit: '',
     safeRange: [6.5, 8.5],
@@ -25,6 +27,7 @@ export const METRICS = [
   },
   {
     key: 'tds',
+    icon: 'gauge',
     label: 'TDS',
     unit: 'ppm',
     safeRange: [100, 500],
@@ -33,6 +36,7 @@ export const METRICS = [
   },
   {
     key: 'dissolved_oxygen',
+    icon: 'wind',
     label: 'Oksigen Terlarut',
     unit: 'mg/L',
     safeRange: [5, 12],
@@ -41,6 +45,7 @@ export const METRICS = [
   },
   {
     key: 'turbidity',
+    icon: 'eye',
     label: 'Kekeruhan',
     unit: 'NTU',
     safeRange: [0, 50],
@@ -49,6 +54,7 @@ export const METRICS = [
   },
   {
     key: 'water_level',
+    icon: 'waves',
     label: 'Level Air',
     unit: 'cm',
     safeRange: [60, 120],
@@ -85,6 +91,13 @@ export function evaluateMetric(key, value, range = rangeFor(key)) {
     return distance > span * 0.15 ? 'critical' : 'warning';
   }
   return 'normal';
+}
+
+const STATUS_RANK = { unknown: 0, normal: 1, warning: 2, critical: 3 };
+
+/** Status paling parah dari beberapa status (untuk ringkasan kolam). */
+export function worstStatus(statuses) {
+  return statuses.reduce((worst, s) => (STATUS_RANK[s] > STATUS_RANK[worst] ? s : worst), 'unknown');
 }
 
 /** Format nilai metrik menjadi teks siap tampil. */
